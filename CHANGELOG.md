@@ -1,3 +1,8 @@
+## <small>2.0.2 (2026-07-01)</small>
+
+* fix(PKGBUILD): clean up variable assignment ([4e6538f](https://github.com/mistweaverco/withsecrets/commit/4e6538f))
+* chore(docs): update CHANGELOG ([d77b132](https://github.com/mistweaverco/withsecrets/commit/d77b132))
+
 ## <small>2.0.1 (2026-07-01)</small>
 
 * fix(PKGBUILD): Update PKGBUILD to include LICENSE file ([1db937c](https://github.com/mistweaverco/withsecrets/commit/1db937c))
