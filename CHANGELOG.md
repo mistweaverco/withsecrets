@@ -1,7 +1,14 @@
+## <small>2.0.1 (2026-07-01)</small>
+
+* fix(PKGBUILD): Update PKGBUILD to include LICENSE file ([1db937c](https://github.com/mistweaverco/withsecrets/commit/1db937c))
+* chore(assets): change svg default size to 128x128 ([9126726](https://github.com/mistweaverco/withsecrets/commit/9126726))
+* chore(docs): update CHANGELOG.md ([f60ec76](https://github.com/mistweaverco/withsecrets/commit/f60ec76))
+* chore(docs): update CHANGELOG.md ([b21bfaf](https://github.com/mistweaverco/withsecrets/commit/b21bfaf))
+* chore(open-graph): add og:title and edit colors of open graph image ([856ee15](https://github.com/mistweaverco/withsecrets/commit/856ee15))
+* feat(open-graph): update open-graph image ([bc56454](https://github.com/mistweaverco/withsecrets/commit/bc56454))
+
 ## 2.0.0 (2026-07-01)
 
-* chore(assets): change svg default size to 128x128 ([9126726](https://github.com/mistweaverco/withsecrets/commit/9126726))
-* chore(docs): update CHANGELOG.md ([b21bfaf](https://github.com/mistweaverco/withsecrets/commit/b21bfaf))
 * break: rebrand as withsecrets ([198ede6](https://github.com/mistweaverco/withsecrets/commit/198ede6))
 * fix(ux): configuration page + navigation ([1767f77](https://github.com/mistweaverco/withsecrets/commit/1767f77))
 * fix(web): search not working when clicking item ([84e41e0](https://github.com/mistweaverco/withsecrets/commit/84e41e0))
