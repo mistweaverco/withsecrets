@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/mistweaverco/kuba/internal/lib/version"
+	"github.com/mistweaverco/withsecrets/internal/lib/version"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,21 +2,24 @@
 
 if [ -z "$VERSION" ]; then echo "Error: VERSION is not set"; exit 1; fi
 
-BIN_NAME="kuba"
 GH_TAG="v$VERSION"
 FILES=()
 
 LINUX_FILES=(
-  "dist/${BIN_NAME}-linux-amd64"
+  "dist/ws-linux-amd64"
+  "dist/kuba-linux-amd64"
 )
 
 MACOS_FILES=(
-  "dist/${BIN_NAME}-darwin-arm64"
-  "dist/${BIN_NAME}-darwin-amd64"
+  "dist/ws-darwin-arm64"
+  "dist/kuba-darwin-arm64"
+  "dist/ws-darwin-amd64"
+  "dist/kuba-darwin-amd64"
 )
 
 WINDOWS_FILES=(
-  "dist/${BIN_NAME}-windows-amd64.exe"
+  "dist/ws-windows-amd64.exe"
+  "dist/kuba-windows-amd64.exe"
 )
 
 check_files_exist() {

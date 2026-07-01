@@ -13,8 +13,8 @@
 
 <HeadComponent
 	data={{
-		title: 'Installation - Kuba',
-		description: 'Install Kuba on Linux, macOS, and Windows using various methods.'
+		title: 'Installation - withsecrets',
+		description: 'Install withsecrets on Linux, macOS, and Windows using various methods.'
 	}}
 />
 
@@ -25,7 +25,7 @@
 				>Installation Guide</ClickableHeadline
 			>
 			<p class="text-xl text-base-content/70">
-				Get Kuba up and running on your system with these simple installation methods.
+				Get withsecrets up and running on your system with these simple installation methods.
 			</p>
 		</div>
 
@@ -60,45 +60,45 @@
 					<div class="card bg-base-200 {installUsing === 'curl-zsh' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">curl & zsh (Linux/macOS)</h3>
-							<CodeBlock lang="bash" code={`curl -sSL https://kuba.mwco.app/install.sh | zsh`} />
+							<CodeBlock lang="bash" code={`curl -sSL https://withsecrets.com/install.sh | zsh`} />
 						</div>
 					</div>
 					<div class="card bg-base-200 {installUsing === 'curl-bash' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">curl & bash (Linux/macOS)</h3>
-							<CodeBlock lang="bash" code={`curl -sSL https://kuba.mwco.app/install.sh | bash`} />
+							<CodeBlock lang="bash" code={`curl -sSL https://withsecrets.com/install.sh | bash`} />
 						</div>
 					</div>
 					<div class="card bg-base-200 {installUsing === 'wget-zsh' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">wget & zsh (Linux/macOS)</h3>
-							<CodeBlock lang="bash" code={`wget -qO- https://kuba.mwco.app/install.sh | zsh`} />
+							<CodeBlock lang="bash" code={`wget -qO- https://withsecrets.com/install.sh | zsh`} />
 						</div>
 					</div>
 					<div class="card bg-base-200 {installUsing === 'wget-bash' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">wget & bash (Linux/macOS)</h3>
-							<CodeBlock lang="bash" code={`wget -qO- https://kuba.mwco.app/install.sh | bash`} />
+							<CodeBlock lang="bash" code={`wget -qO- https://withsecrets.com/install.sh | bash`} />
 						</div>
 					</div>
 					<div class="card bg-base-200 {installUsing === 'arch-aur' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">Arch Linux (AUR)</h3>
 							<p class="mb-4">
-								Kuba is available in the AUR as <a
-									href="https://aur.archlinux.org/packages/kuba-bin"
-									class="link link-primary">kuba-bin</a
+								withsecrets is available in the AUR as <a
+									href="https://aur.archlinux.org/packages/withsecrets-bin"
+									class="link link-primary">withsecrets-bin</a
 								>.
 							</p>
-							<CodeBlock lang="bash" code={`paru -S kuba-bin`} />
+							<CodeBlock lang="bash" code={`paru -S withsecrets-bin`} />
 						</div>
 					</div>
 					<div class="card bg-base-200 {installUsing === 'arch-pkgbuild' ? '' : 'hidden'}">
 						<div class="card-body">
 							<h3 class="card-title">Arch Linux (PKGBUILD)</h3>
 							<p class="mb-4">
-								Kuba ships a <code>PKGBUILD</code> you can use to build and install a
-								<code>kuba-bin</code>
+								withsecrets ships a <code>PKGBUILD</code> you can use to build and install a
+								<code>withsecrets-bin</code>
 								package from GitHub release binaries.
 							</p>
 							<CodeBlock
@@ -107,8 +107,8 @@
 sudo pacman -S --needed base-devel git
 
 # Build from the PKGBUILD in the repo
-git clone https://github.com/mistweaverco/kuba.git
-cd kuba/scripts
+git clone https://github.com/mistweaverco/withsecrets.git
+cd withsecrets/scripts
 
 # Build & install the package
 makepkg -si`}
@@ -116,8 +116,8 @@ makepkg -si`}
 							<div class="alert alert-info mt-4">
 								<i class="fa-solid fa-info-circle mr-2"></i>
 								<span>
-									The package name is <code>kuba-bin</code> and installs the binary as
-									<code>kuba</code>. If you maintain a custom repo / AUR workflow, you can adapt the
+									The package name is <code>withsecrets-bin</code> and installs the binary as
+									<code>ws</code> (with a <code>kuba</code> compatibility symlink). If you maintain a custom repo / AUR workflow, you can adapt the
 									PKGBUILD.
 								</span>
 							</div>
@@ -128,7 +128,7 @@ makepkg -si`}
 							<h3 class="card-title">PowerShell (Windows)</h3>
 							<CodeBlock
 								lang="powershell"
-								code={`iwr https://kuba.mwco.app/install.ps1 -useb | iex`}
+								code={`iwr https://withsecrets.com/install.ps1 -useb | iex`}
 							/>
 						</div>
 					</div>
@@ -142,7 +142,7 @@ makepkg -si`}
 							</p>
 							<p>
 								Or visit our <a
-									href="https://github.com/mistweaverco/kuba/releases/latest"
+									href="https://github.com/mistweaverco/withsecrets/releases/latest"
 									class="link link-primary">GitHub releases</a
 								> page.
 							</p>
@@ -171,7 +171,7 @@ makepkg -si`}
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Dependencies</h3>
-							<p>Kuba is a single binary with no external dependencies required.</p>
+							<p>withsecrets is a single binary with no external dependencies required.</p>
 						</div>
 					</div>
 
@@ -192,10 +192,10 @@ makepkg -si`}
 
 			<div class="card bg-base-200">
 				<div class="card-body">
-					<p class="mb-4">After installation, verify that Kuba is working correctly:</p>
-					<CodeBlock lang="bash" code={`kuba --version`} />
+					<p class="mb-4">After installation, verify that withsecrets is working correctly:</p>
+					<CodeBlock lang="bash" code={`ws --version`} />
 					<p class="mt-4 text-sm text-base-content/70">
-						You should see the current version of Kuba displayed.
+						You should see the current version of withsecrets displayed.
 					</p>
 				</div>
 			</div>
@@ -209,8 +209,8 @@ makepkg -si`}
 			<div class="grid md:grid-cols-2 gap-6">
 				<div class="card bg-base-200">
 					<div class="card-body">
-						<h3 class="card-title">Configure Kuba</h3>
-						<p>Set up your configuration file to start using Kuba with your cloud providers.</p>
+						<h3 class="card-title">Configure withsecrets</h3>
+						<p>Set up your configuration file to start using withsecrets with your cloud providers.</p>
 						<a href="/configuration" class="btn btn-outline bg-lg">Configuration Guide</a>
 					</div>
 				</div>
@@ -219,7 +219,7 @@ makepkg -si`}
 					<div class="card-body">
 						<h3 class="card-title">Learn Usage</h3>
 						<p>
-							Discover how to use Kuba to run your applications with secure environment variables.
+							Discover how to use withsecrets to run your applications with secure environment variables.
 						</p>
 						<a href="/usage" class="btn btn-outline bg-lg">Usage Guide</a>
 					</div>
@@ -232,7 +232,7 @@ makepkg -si`}
 				<i class="fa-solid fa-info-circle mr-2"></i>
 				<span>
 					<strong>Need help?</strong> Check out our
-					<a href="https://github.com/mistweaverco/kuba/issues" class="link">GitHub issues</a>
+					<a href="https://github.com/mistweaverco/withsecrets/issues" class="link">GitHub issues</a>
 					or join our <a href="https://mistweaverco.com/discord" class="link">Discord community</a>.
 				</span>
 			</div>

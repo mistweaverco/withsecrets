@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://withsecrets.com/ws.schema.json",
+  "title": "Project Configuration File",
+  "description": "Schema for a project configuration file with multiple environments.",
+  "type": "object",
+  "patternProperties": {
+    "^[a-zA-Z0-9_-]+$": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "description": "The default cloud provider for this environment.",
+          "type": "string",
+          "enum": ["gcp", "azure", "aws", "openbao", "bitwarden", "local"]
+        },
+        "project": {
+          "description": "The default cloud project for this environment. This can be a string or an integer.",
+          "type": ["string", "integer"]
+        },
+        "inherits": {
+          "description": "One or more environment names to inherit variables from (in order).",
+          "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+        },
+        "cache": {
+          "description": "Cache configuration for this environment. Can be a boolean, number (seconds), or duration string (e.g., '1d', '2w', '72h', '2y').",
+          "oneOf": [
+            { "type": "boolean" },
+            { "type": "number" },
+            { "type": "string", "pattern": "^(\\d+(?:\\.\\d+)?[smhdwy]|\\d+)$" }
+          ]
+        },
+        "env": {
+          "description": "Mapping of environment variable name to configuration object.",
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z0-9_]+$": {
+              "type": "object",
+              "properties": {
+                "secret-key": { "type": "string" },
+                "secret-path": { "type": "string" },
+                "value": { "type": ["string", "integer"] },
+                "provider": {
+                  "type": "string",
+                  "enum": ["gcp", "azure", "aws", "openbao", "bitwarden", "local"]
+                },
+                "project": { "type": ["string", "integer"] }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": { "provider": { "const": "local" } },
+                    "required": ["provider"]
+                  },
+                  "then": {
+                    "required": ["value"],
+                    "not": {
+                      "anyOf": [{ "required": ["secret-key"] }, { "required": ["secret-path"] }]
+                    }
+                  },
+                  "else": {
+                    "oneOf": [
+                      { "required": ["secret-key"] },
+                      { "required": ["secret-path"] },
+                      { "required": ["value"] }
+                    ]
+                  }
+                }
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "allOf": [
+        {
+          "required": ["provider"]
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "not": {
+                  "enum": ["aws", "azure", "openbao", "bitwarden", "local"]
+                }
+              }
+            }
+          },
+          "then": {
+            "required": ["project"]
+          }
+        },
+        {
+          "if": { "properties": { "provider": { "const": "local" } } },
+          "then": {
+            "properties": {
+              "env": {
+                "patternProperties": {
+                  "^[A-Z0-9_]+$": {
+                    "allOf": [
+                      {
+                        "if": { "not": { "required": ["provider"] } },
+                        "then": {
+                          "required": ["value"],
+                          "not": {
+                            "anyOf": [
+                              { "required": ["secret-key"] },
+                              { "required": ["secret-path"] }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

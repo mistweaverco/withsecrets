@@ -6,9 +6,9 @@
 
 <HeadComponent
 	data={{
-		title: 'Usage Guide - Kuba',
+		title: 'Usage Guide - withsecrets',
 		description:
-			'Learn how to use Kuba to run applications with secure environment variables from cloud providers.'
+			'Learn how to use withsecrets to run applications with secure environment variables from cloud providers.'
 	}}
 />
 
@@ -19,7 +19,7 @@
 				>Usage Guide</ClickableHeadline
 			>
 			<p class="text-xl text-base-content/70">
-				Learn how to use Kuba to securely run your applications with environment variables from
+				Learn how to use withsecrets to securely run your applications with environment variables from
 				cloud providers.
 			</p>
 		</div>
@@ -32,13 +32,13 @@
 
 				<div class="card bg-base-200 mb-6">
 					<div class="card-body">
-						<ClickableHeadline level={3} id="running-applications-with-kuba" className="card-title"
-							>Running Applications with Kuba</ClickableHeadline
+						<ClickableHeadline level={3} id="running-applications-with-withsecrets" className="card-title"
+							>Running Applications with withsecrets</ClickableHeadline
 						>
-						<p class="mb-4">The basic syntax for using Kuba is:</p>
-						<CodeBlock lang="bash" code={`kuba run -- <your-application>`} />
+						<p class="mb-4">The basic syntax for using withsecrets is:</p>
+						<CodeBlock lang="bash" code={`ws run -- <your-application>`} />
 						<p class="mt-4">
-							This will fetch all secrets defined in your <code>kuba.yaml</code> file and pass them as
+							This will fetch all secrets defined in your <code>ws.yaml</code> file and pass them as
 							environment variables to your application. By default, these secrets are merged with your
 							current OS environment.
 						</p>
@@ -47,13 +47,13 @@
 
 				<div class="card bg-base-200 mb-6">
 					<div class="card-body">
-						<ClickableHeadline level={3} id="running-commands-with-kuba" className="card-title"
-							>Running Commands with Kuba</ClickableHeadline
+						<ClickableHeadline level={3} id="running-commands-with-withsecrets" className="card-title"
+							>Running Commands with withsecrets</ClickableHeadline
 						>
-						<p class="mb-4">The basic syntax for running a one-of command with Kuba is:</p>
-						<CodeBlock lang="bash" code={`kuba run --command "echo \$SOME_SECRET"`} />
+						<p class="mb-4">The basic syntax for running a one-of command with withsecrets is:</p>
+						<CodeBlock lang="bash" code={`ws run --command "echo \$SOME_SECRET"`} />
 						<p class="mt-4">
-							This will fetch all secrets defined in your <code>kuba.yaml</code> file and pass them as
+							This will fetch all secrets defined in your <code>ws.yaml</code> file and pass them as
 							environment variables to your command. By default, these secrets are merged with your current
 							OS environment.
 						</p>
@@ -62,7 +62,7 @@
 							<span>
 								<strong>Important:</strong>
 								Escaping <code>$</code> characters is only necessary when using the
-								<code>--command</code> flag. When passing an application and its arguments directly, Kuba
+								<code>--command</code> flag. When passing an application and its arguments directly, withsecrets
 								will handle them correctly.
 							</span>
 						</div>
@@ -85,14 +85,14 @@
 						>
 						<p class="mb-4">
 							The <code>--contain</code> flag prevents the merging of the current OS environment
-							with the environment variables from <code>kuba.yaml</code>. This is useful when you
+							with the environment variables from <code>ws.yaml</code>. This is useful when you
 							want to ensure only the secrets defined in your configuration are available to the
 							command.
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`# Only use environment variables from kuba.yaml
-kuba run --contain -- node dist/server.js`}
+							code={`# Only use environment variables from ws.yaml
+ws run --contain -- node dist/server.js`}
 						/>
 					</div>
 				</div>
@@ -101,14 +101,14 @@ kuba run --contain -- node dist/server.js`}
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Node.js Application</h3>
-							<CodeBlock lang="bash" code={`kuba run -- node dist/server.js`} />
+							<CodeBlock lang="bash" code={`ws run -- node dist/server.js`} />
 						</div>
 					</div>
 
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Python Application</h3>
-							<CodeBlock lang="bash" code={`kuba run -- python app.py`} />
+							<CodeBlock lang="bash" code={`ws run -- python app.py`} />
 						</div>
 					</div>
 
@@ -117,7 +117,7 @@ kuba run --contain -- node dist/server.js`}
 							<h3 class="card-title">Docker Container</h3>
 							<CodeBlock
 								lang="bash"
-								code={`docker run --env-file=<(kuba show --output dotenv --env default) myapp`}
+								code={`docker run --env-file=<(ws show --output dotenv --env default) myapp`}
 							/>
 						</div>
 					</div>
@@ -125,7 +125,7 @@ kuba run --contain -- node dist/server.js`}
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Shell Script</h3>
-							<CodeBlock lang="bash" code={`kuba run -- ./deploy.sh`} />
+							<CodeBlock lang="bash" code={`ws run -- ./deploy.sh`} />
 						</div>
 					</div>
 				</div>
@@ -140,22 +140,22 @@ kuba run --contain -- node dist/server.js`}
 					<div class="card-body">
 						<h3 class="card-title">Validate Access and Mappings</h3>
 						<p class="mb-4">
-							Use the <code>test</code> subcommand to verify that Kuba can load your configuration and
+							Use the <code>test</code> subcommand to verify that withsecrets can load your configuration and
 							retrieve all mapped values for an environment without executing a program.
 						</p>
 						<CodeBlock
 							lang="bash"
 							code={`# Use default environment
-kuba test
+ws test
 
 # Also test with verbose/debug output
-kuba test --debug
+ws test --debug
 
 # Specify an environment
-kuba test --env staging
+ws test --env staging
 
 # Point to a specific configuration file
-kuba test --config ./config/kuba.yaml --env production`}
+ws test --config ./config/ws.yaml --env production`}
 						/>
 					</div>
 				</div>
@@ -176,11 +176,11 @@ kuba test --config ./config/kuba.yaml --env production`}
 						<p class="mb-4">
 							You can specify which environment configuration to use with the <code>--env</code> flag:
 						</p>
-						<CodeBlock lang="bash" code={`kuba run --env development -- node app.js`} />
-						<CodeBlock lang="bash" code={`kuba run --env staging -- python app.py`} />
+						<CodeBlock lang="bash" code={`ws run --env development -- node app.js`} />
+						<CodeBlock lang="bash" code={`ws run --env staging -- python app.py`} />
 						<CodeBlock
 							lang="bash"
-							code={`docker run --env-file=<(kuba show --output dotenv --env production) myapp`}
+							code={`docker run --env-file=<(ws show --output dotenv --env production) myapp`}
 						/>
 					</div>
 				</div>
@@ -188,7 +188,7 @@ kuba test --config ./config/kuba.yaml --env production`}
 				<div class="alert alert-info">
 					<i class="fa-solid fa-info-circle mr-2"></i>
 					<span>
-						If no environment is specified, Kuba will use the <code>default</code> environment from your
+						If no environment is specified, withsecrets will use the <code>default</code> environment from your
 						configuration.
 					</span>
 				</div>
@@ -208,18 +208,18 @@ kuba test --config ./config/kuba.yaml --env production`}
 								>Development Workflow</ClickableHeadline
 							>
 							<p class="mb-4">
-								Use Kuba during development to avoid managing local <code>.env</code> files:
+								Use withsecrets during development to avoid managing local <code>.env</code> files:
 							</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Start development server with secrets
-kuba run --env development -- npm run dev
+ws run --env development -- npm run dev
 
 # Run tests with test environment secrets
-kuba run --env testing -- npm test
+ws run --env testing -- npm test
 
 # Run database migrations
-kuba run --env development -- npm run migrate`}
+ws run --env development -- npm run migrate`}
 							/>
 						</div>
 					</div>
@@ -229,16 +229,16 @@ kuba run --env development -- npm run migrate`}
 							<ClickableHeadline level={3} id="ci-cd-integration" className="card-title"
 								>CI/CD Integration</ClickableHeadline
 							>
-							<p class="mb-4">Integrate Kuba into your CI/CD pipelines:</p>
+							<p class="mb-4">Integrate withsecrets into your CI/CD pipelines:</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Build and test with staging secrets
-kuba run --env staging -- npm run build
-kuba run --env staging -- npm test
+ws run --env staging -- npm run build
+ws run --env staging -- npm test
 
 # Deploy with production secrets
-kuba run --env production -- docker build -t myapp .
-kuba run --env production -- docker push myapp`}
+ws run --env production -- docker build -t myapp .
+ws run --env production -- docker push myapp`}
 							/>
 						</div>
 					</div>
@@ -248,16 +248,16 @@ kuba run --env production -- docker push myapp`}
 							<ClickableHeadline level={3} id="docker-integration" className="card-title"
 								>Docker Integration</ClickableHeadline
 							>
-							<p class="mb-4">Use Kuba with Docker containers:</p>
+							<p class="mb-4">Use withsecrets with Docker containers:</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Run container with secrets as environment variables
-kuba run -- docker run -e DATABASE_URL -e API_KEY myapp
+ws run -- docker run -e DATABASE_URL -e API_KEY myapp
 
 # Build container with secrets available during build
-kuba run -- docker build --build-arg DATABASE_URL --build-arg API_KEY .
+ws run -- docker build --build-arg DATABASE_URL --build-arg API_KEY .
 
-docker run --env-file=<(kuba show --output dotenv) myapp`}
+docker run --env-file=<(ws show --output dotenv) myapp`}
 							/>
 						</div>
 					</div>
@@ -277,21 +277,21 @@ docker run --env-file=<(kuba show --output dotenv) myapp`}
 								Use the <code>show</code> subcommand to display the resolved environment variables based
 								on your configuration without running a program:
 							</p>
-							<CodeBlock lang="bash" code={`kuba show`} />
+							<CodeBlock lang="bash" code={`ws show`} />
 							<p class="mt-4">
-								This will print all environment variables as defined in your <code>kuba.yaml</code> file.
+								This will print all environment variables as defined in your <code>ws.yaml</code> file.
 							</p>
 							<p class="mb-4">
 								You can also specify an environment to show its specific variables. Or just show a
 								specific variable by name, or a group of variables using a wildcard.
 							</p>
-							<CodeBlock lang="bash" code={`kuba show --env prod "DATABASE_URL" "LOG_*"`} />
+							<CodeBlock lang="bash" code={`ws show --env prod "DATABASE_URL" "LOG_*"`} />
 							<p class="mt-4">
 								If you want to hide sensitive values when displaying, use the <code
 									>--sensitive</code
 								> flag.
 							</p>
-							<CodeBlock lang="bash" code={`kuba show --sensitive --env prod "LOG_*"`} />
+							<CodeBlock lang="bash" code={`ws show --sensitive --env prod "LOG_*"`} />
 						</div>
 					</div>
 				</div>
@@ -305,13 +305,13 @@ docker run --env-file=<(kuba show --output dotenv) myapp`}
 				<div class="space-y-6">
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<h3 class="card-title">Automatically update kuba binary</h3>
+							<h3 class="card-title">Automatically update withsecrets binary</h3>
 							<p class="mb-4">
-								Kuba can update itself to the latest version using the following command:
+								withsecrets can update itself to the latest version using the following command:
 							</p>
-							<CodeBlock lang="bash" code={`kuba update`} />
+							<CodeBlock lang="bash" code={`ws update`} />
 							<p class="mt-4">
-								This command checks for the latest version of Kuba and replaces the current binary
+								This command checks for the latest version of withsecrets and replaces the current binary
 								with the updated one. It also creates a backup of the existing binary.
 							</p>
 						</div>
@@ -328,20 +328,20 @@ docker run --env-file=<(kuba show --output dotenv) myapp`}
 						<div class="card-body">
 							<h3 class="card-title">Interactive TUI for environments and secrets</h3>
 							<p class="mb-4">
-								Kuba includes an interactive terminal UI for viewing, editing, and adding secrets.
+								withsecrets includes an interactive terminal UI for viewing, editing, and adding secrets.
 							</p>
 							<CodeBlock
 								lang="bash"
-								code={`# Uses ./kuba.yaml if present, otherwise searches parent directories
-kuba tui
+								code={`# Uses ./ws.yaml if present, otherwise searches parent directories
+ws tui
 
 # Or point to a specific file
-kuba tui --config ./config/kuba.yaml`}
+ws tui --config ./config/ws.yaml`}
 							/>
 							<div class="alert alert-info mt-4">
 								<i class="fa-solid fa-info-circle mr-2"></i>
 								<span>
-									The TUI reads your configured providers from <code>kuba.yaml</code>. Make sure
+									The TUI reads your configured providers from <code>ws.yaml</code>. Make sure
 									you’ve set up auth for your provider(s) first (see
 									<a class="link" href="/providers">Providers</a>).
 								</span>
@@ -360,16 +360,16 @@ kuba tui --config ./config/kuba.yaml`}
 						<div class="card-body">
 							<h3 class="card-title">Show the baked-in changelog</h3>
 							<p class="mb-4">
-								You can view Kuba’s changelog directly in your terminal (rendered as formatted
+								You can view withsecrets’s changelog directly in your terminal (rendered as formatted
 								markdown):
 							</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Latest section
-kuba changelog latest
+ws changelog latest
 
 # Or a specific version
-kuba changelog 1.8.0`}
+ws changelog 1.8.0`}
 							/>
 						</div>
 					</div>
@@ -385,16 +385,16 @@ kuba changelog 1.8.0`}
 						<div class="card-body">
 							<h3 class="card-title">Create or edit a user template</h3>
 							<p class="mb-4">
-								Kuba can open a user template in your editor (uses <code>$VISUAL</code> or
+								withsecrets can open a user template in your editor (uses <code>$VISUAL</code> or
 								<code>$EDITOR</code>).
 							</p>
-							<CodeBlock lang="bash" code={`kuba create template my-template`} />
+							<CodeBlock lang="bash" code={`ws create template my-template`} />
 							<div class="alert alert-info mt-4">
 								<i class="fa-solid fa-info-circle mr-2"></i>
 								<span>
 									<strong>Tip:</strong> You can create a template named <code>default</code>. When
 									you run
-									<code>kuba init</code> without a template name, Kuba will use that
+									<code>ws init</code> without a template name, withsecrets will use that
 									<code>default</code>
 									template automatically.
 								</span>
@@ -440,7 +440,7 @@ kuba changelog 1.8.0`}
 										>Configuration Errors</ClickableHeadline
 									>
 									<p class="text-sm">
-										Validate your <code>kuba.yaml</code> file. Use <code>kuba init</code> to generate
+										Validate your <code>ws.yaml</code> file. Use <code>ws init</code> to generate
 										a valid template.
 									</p>
 								</div>
@@ -463,9 +463,9 @@ kuba changelog 1.8.0`}
 								>Debug Mode</ClickableHeadline
 							>
 							<p class="mb-4">
-								Enable debug mode to see detailed information about what Kuba is doing:
+								Enable debug mode to see detailed information about what withsecrets is doing:
 							</p>
-							<CodeBlock lang="bash" code={`kuba run --debug -- node app.js`} />
+							<CodeBlock lang="bash" code={`ws run --debug -- node app.js`} />
 						</div>
 					</div>
 				</div>
@@ -544,7 +544,7 @@ kuba changelog 1.8.0`}
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Configuration Guide</h3>
-							<p>Learn how to set up your <code>kuba.yaml</code> configuration file.</p>
+							<p>Learn how to set up your <code>ws.yaml</code> configuration file.</p>
 							<a href="/configuration" class="btn btn-outline bg-lg">Configuration Guide</a>
 						</div>
 					</div>

@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mistweaverco/kuba/internal/lib/cache"
-	"github.com/mistweaverco/kuba/internal/lib/log"
+	"github.com/mistweaverco/withsecrets/internal/lib/cache"
+	"github.com/mistweaverco/withsecrets/internal/lib/log"
 	"gopkg.in/yaml.v3"
 )
 
-// GlobalConfig represents the global kuba configuration
+// GlobalConfig represents the global ws configuration
 type GlobalConfig struct {
 	Cache    cache.CacheConfig `yaml:"cache"`
 	Defaults *DefaultsConfig   `yaml:"defaults,omitempty"`
@@ -90,13 +90,19 @@ func LoadGlobalConfig() (*GlobalConfig, error) {
 		return nil, fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	configPath := filepath.Join(homeDir, ".config", "kuba", "config.yaml")
+	configPath := filepath.Join(GlobalConfigDir(homeDir), "config.yaml")
+	legacyPath := filepath.Join(LegacyGlobalConfigDir(homeDir), "config.yaml")
 	logger.Debug("Loading global configuration", "path", configPath)
 
-	// Check if config file exists
+	// Check if config file exists (prefer new path, fall back to legacy kuba path)
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		logger.Debug("Global configuration file not found, using defaults")
-		return DefaultGlobalConfig(), nil
+		if _, legacyErr := os.Stat(legacyPath); legacyErr == nil {
+			configPath = legacyPath
+			logger.Debug("Using legacy global configuration path", "path", configPath)
+		} else {
+			logger.Debug("Global configuration file not found, using defaults")
+			return DefaultGlobalConfig(), nil
+		}
 	}
 
 	// Read file
@@ -132,7 +138,7 @@ func SaveGlobalConfig(config *GlobalConfig) error {
 		return fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	configDir := filepath.Join(homeDir, ".config", "kuba")
+	configDir := GlobalConfigDir(homeDir)
 	configPath := filepath.Join(configDir, "config.yaml")
 
 	// Create config directory if it doesn't exist
@@ -163,7 +169,17 @@ func GetCacheDir() (string, error) {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	cacheDir := filepath.Join(homeDir, ".cache", "kuba")
+	cacheDir := CacheDir(homeDir)
+	legacyCacheDir := LegacyCacheDir(homeDir)
+	legacyDB := filepath.Join(legacyCacheDir, "db.sqlite")
+	newDB := filepath.Join(cacheDir, "db.sqlite")
+
+	if _, err := os.Stat(newDB); os.IsNotExist(err) {
+		if _, legacyErr := os.Stat(legacyDB); legacyErr == nil {
+			return legacyCacheDir, nil
+		}
+	}
+
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}

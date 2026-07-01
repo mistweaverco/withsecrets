@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mistweaverco/kuba/internal/config"
-	"github.com/mistweaverco/kuba/internal/lib/secrets"
+	"github.com/mistweaverco/withsecrets/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/lib/secrets"
 )
 
 type createInput struct {
@@ -107,7 +107,7 @@ func (m *Model) doCreateFromForm(in createInput) error {
 		return err
 	}
 
-	// Add mapping to kuba.yaml.
+	// Add mapping to ws.yaml.
 	if err := config.AddOrUpdateEnvSecretKeyMapping(in.configPath, in.envName, envVar, secretKey); err != nil {
 		return err
 	}

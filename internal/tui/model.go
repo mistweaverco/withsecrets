@@ -13,15 +13,15 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/mistweaverco/kuba/internal/config"
-	"github.com/mistweaverco/kuba/internal/lib/secrets"
+	"github.com/mistweaverco/withsecrets/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/lib/secrets"
 )
 
 type Model struct {
 	ctx        context.Context
 	configPath string
 
-	cfg       *config.KubaConfig
+	cfg       *config.SecretsConfig
 	globalCfg *config.GlobalConfig
 
 	screen Screen
@@ -92,7 +92,7 @@ func (m *Model) sizeFormToModalBody(f *huh.Form) *huh.Form {
 }
 
 func New(ctx context.Context, configPath string) (*Model, error) {
-	cfg, err := config.LoadKubaConfig(configPath)
+	cfg, err := config.LoadSecretsConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -828,13 +828,13 @@ func (m *Model) doDelete(row secretRow) error {
 		return err
 	}
 
-	// Also remove the mapping from kuba.yaml so it doesn't reappear on refresh.
+	// Also remove the mapping from ws.yaml so it doesn't reappear on refresh.
 	if err := config.RemoveEnvMapping(m.configPath, m.selectedEnvName, row.envVar); err != nil {
 		return err
 	}
 
 	// Reload config/env so subsequent actions use updated inheritance/mappings.
-	if cfg, err := config.LoadKubaConfig(m.configPath); err == nil {
+	if cfg, err := config.LoadSecretsConfig(m.configPath); err == nil {
 		m.cfg = cfg
 		if env, err := m.cfg.GetEnvironment(m.selectedEnvName); err == nil {
 			m.selectedEnv = env

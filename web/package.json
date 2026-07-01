@@ -1,5 +1,5 @@
 {
-	"name": "kuba.mwco.app",
+	"name": "withsecrets",
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
@@ -35,7 +35,7 @@
 		"typescript": "5.9.3",
 		"typescript-eslint": "8.58.0",
 		"vite": "8.0.5",
-		"vite-plus": "0.1.16",
+		"vite-plus": "0.2.1",
 		"vitest": "4.1.2"
 	},
 	"packageManager": "pnpm@10.33.0"

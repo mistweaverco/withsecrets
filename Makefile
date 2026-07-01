@@ -1,4 +1,4 @@
-BIN_NAME=kuba
+BIN_NAME=ws
 
 build:
 	./scripts/build.sh

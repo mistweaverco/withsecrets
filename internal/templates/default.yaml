@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://kuba.mwco.app/kuba.schema.json
+# yaml-language-server: $schema=https://withsecrets.com/ws.schema.json
 ---
 default:
   provider: insert_provider_here
@@ -8,4 +8,3 @@ default:
       value: "insert_value_here"
     YOUR_SECRET_ENV_VARIABLE:
       secret-key: "insert_secret_key_here"
-

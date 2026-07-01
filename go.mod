@@ -1,4 +1,4 @@
-module github.com/mistweaverco/kuba
+module github.com/mistweaverco/withsecrets
 
 go 1.25.8
 

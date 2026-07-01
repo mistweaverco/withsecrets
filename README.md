@@ -1,23 +1,23 @@
 <div align="center">
 
-![kuba logo](assets/logo.svg)
+![withsecrets logo](assets/logo.svg)
 
-# Kuba
+# withsecrets
 
-[![Made with love](assets/badge-made-with-love.svg)](https://github.com/mistweaverco/kuba/graphs/contributors)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/mistweaverco/kuba?style=for-the-badge)](https://github.com/mistweaverco/kuba/releases/latest)
-[![Development status)](assets/badge-development-status.svg)](https://github.com/orgs/mistweaverco/projects/5/views/1?filterQuery=repo%3Amistweaverco%2Fkuba)
-[![License](https://img.shields.io/github/license/mistweaverco/kuba?style=for-the-badge)](./LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/mistweaverco/kuba?style=for-the-badge)](https://github.com/mistweaverco/kuba/issues)
+CLI: **`ws`**
+
+[![Made with love](assets/badge-made-with-love.svg)](https://github.com/mistweaverco/withsecrets/graphs/contributors)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/mistweaverco/withsecrets?style=for-the-badge)](https://github.com/mistweaverco/withsecrets/releases/latest)
+[![Development status)](assets/badge-development-status.svg)](https://github.com/orgs/mistweaverco/projects/5/views/1?filterQuery=repo%3Amistweaverco%2Fwithsecrets)
+[![License](https://img.shields.io/github/license/mistweaverco/withsecrets?style=for-the-badge)](./LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/mistweaverco/withsecrets?style=for-the-badge)](https://github.com/mistweaverco/withsecrets/issues)
 [![Discord](assets/badge-discord.svg)](https://mistweaverco.com/discord)
 
-[Why?](#why) • [Installation](#installation) • [Usage](#usage)
+[Why?](#why) • [Installation](#installation) • [Usage](#usage) • [Migrating from kuba](#migrating-from-kuba)
 
 <p></p>
 
-Kuba is [Swahili](https://en.wikipedia.org/wiki/Swahili_language) for "vault."
-
-Kuba helps you to get rid of `.env` files.
+withsecrets helps you get rid of `.env` files.
 
 Pass env directly from GCP Secret Manager,
 AWS Secrets Manager,
@@ -41,6 +41,7 @@ Azure Key Vault, OpenBao, and Bitwarden Secrets Manager to your application
   - [Secret Path Mapping](#secret-path-mapping)
   - [Running with a specific environment](#running-with-a-specific-environment)
   - [Testing configuration and access](#testing-configuration-and-access)
+- [Migrating from kuba](#migrating-from-kuba)
 - [Cloud Provider Setup](#cloud-provider-setup)
   - [Google Cloud Platform (GCP)](#google-cloud-platform-gcp)
   - [AWS Secrets Manager](#aws-secrets-manager)
@@ -74,8 +75,8 @@ which can be problematic for several reasons:
 - **Lack of Standardization**: Each cloud provider has its own way of managing secrets,
   leading to a fragmented approach that can complicate development and deployment.
 
-Kuba addresses these issues by allowing you to define your environment variables
-in a single `kuba.yaml` file and fetch them directly from cloud providers like GCP
+withsecrets addresses these issues by allowing you to define your environment variables
+in a single `ws.yaml` file and fetch them directly from cloud providers like GCP
 Secret Manager, AWS Secrets Manager, Azure Key Vault, and OpenBao.
 
 This eliminates the need for `.env` files and provides a more secure,
@@ -98,24 +99,24 @@ To be clear, there are many other tools that can help you manage secrets:
 > or setting up and maintaining a separate service yourself,
 > which can be a barrier for small teams or individual developers.
 
-However, Kuba is designed to be straightforward and easy to use,
+However, withsecrets is designed to be straightforward and easy to use,
 by leveraging the existing secret management systems of cloud providers,
 that you might already be using.
 
 ## Installation
 
-Kuba is a single binary, so you can install it easily.
+withsecrets is a single binary, so you can install it easily.
 
 ### Manual installation
 
-Download the latest release from [GitHub Releases](https://github.com/mistweaverco/kuba/releases/latest).
+Download the latest release from [GitHub Releases](https://github.com/mistweaverco/withsecrets/releases/latest).
 
 ### Automatic Linux and macOS installation
 
 You can install it using `curl`:
 
 ```sh
-curl -sSL https://kuba.mwco.app/install.sh | sh
+curl -sSL https://withsecrets.com/install.sh | sh
 ```
 
 ### Automatic Windows installation
@@ -123,51 +124,66 @@ curl -sSL https://kuba.mwco.app/install.sh | sh
 Run the following command in PowerShell:
 
 ```powershell
-iwr https://kuba.mwco.app/install.ps1 -useb | iex
+iwr https://withsecrets.com/install.ps1 -useb | iex
 ```
+
+## Migrating from kuba
+
+kuba has been renamed to **withsecrets**. The CLI is now **`ws`**.
+
+| kuba (legacy)     | withsecrets (new)                                                  |
+| ----------------- | ------------------------------------------------------------------ |
+| `kuba` command    | `ws` command (`kuba` still works via compatibility binary/symlink) |
+| `kuba.yaml`       | `ws.yaml` (also accepts `withsecrets.yaml` and `kuba.yaml`)        |
+| `~/.config/kuba/` | `~/.config/withsecrets/` (reads legacy path automatically)         |
+| `KUBA_HOME`       | `WS_HOME` (also accepts `KUBA_HOME`)                               |
+| `kuba update`     | Downloads from `mistweaverco/withsecrets` and keeps working        |
+
+No immediate action is required: existing `kuba.yaml` files and `kuba` commands continue to work.
+New projects should use `ws.yaml` and the `ws` command.
 
 ## Usage
 
 ```sh
-kuba run -- <your-application>
+ws run -- <your-application>
 ```
 
 This will fetch all secrets defined in
-`kuba.yaml` and pass them as
+`ws.yaml` and pass them as
 environment variables to any arbitrary application.
 
 A basic example:
 
 ```sh
-kuba run -- npm run dev
+ws run -- npm run dev
 ```
 
 ### Running commands directly
 
-If you want to run a *command* with arguments,
+If you want to run a _command_ with arguments,
 use the `--command` flag:
 
 ```sh
-kuba run --command "<your-command> [args...]"
+ws run --command "<your-command> [args...]"
 ```
 
 When using the `--command` flag,
 make sure to wrap the entire command in quotes.
 
 If you don't escape `$` characters,
-your shell might try to interpolate them before Kuba runs.
+your shell might try to interpolate them before withsecrets runs.
 
 > [!IMPORTANT]
 > Escaping `$` characters is only necessary
 > when using the `--command` flag.
 >
 > When passing an application and its arguments directly,
-> Kuba will handle them correctly.
+> withsecrets will handle them correctly.
 
 A basic example with the `--command` flag:
 
 ```sh
-kuba run --command "echo \$DATABASE_URL"
+ws run --command "echo \$DATABASE_URL"
 ```
 
 > [!NOTE]
@@ -177,18 +193,18 @@ kuba run --command "echo \$DATABASE_URL"
 > It tries to use the default shell on your system by
 > checking the `$SHELL` environment variable on Unix-like systems
 
-
 ### Debug mode
 
 For troubleshooting configuration issues and seeing detailed execution steps, you can enable debug mode:
 
 ```sh
-kuba --debug run -- <your-application>
+ws --debug run -- <your-application>
 # or use the short form
-kuba -d run -- <your-application>
+ws -d run -- <your-application>
 ```
 
 Debug mode provides verbose logging that shows:
+
 - Configuration file discovery and loading
 - Environment selection and validation
 - Secret provider initialization
@@ -197,6 +213,7 @@ Debug mode provides verbose logging that shows:
 - Application execution details
 
 This is particularly useful for:
+
 - Diagnosing cloud provider authentication issues
 - Troubleshooting configuration file syntax errors
 - Understanding why certain secrets aren't being loaded
@@ -205,67 +222,70 @@ This is particularly useful for:
 
 ### Available commands and flags
 
-Kuba provides several commands to help you manage your configuration:
+withsecrets provides several commands to help you manage your configuration:
 
-- `completion`: Generates shell completion scripts for Kuba
-- `config`: Manages global Kuba configuration options such as:
+- `completion`: Generates shell completion scripts for withsecrets
+- `config`: Manages global withsecrets configuration options such as:
   - `cache`: Enable or disable local caching of secrets
   - `defaults`: Manage provider defaults (e.g. default regions)
-- `create`: Create kuba resources such as templates
+- `create`: Create withsecrets resources such as templates
   - `template <template_name>`: Create/edit a template in the user templates directory
-- `convert`: Converts existing configuration sources (e.g. **dotenv** (`.env*`), **Knative Service** manifests) to `kuba.yaml` format
+- `convert`: Converts existing configuration sources (e.g. **dotenv** (`.env*`), **Knative Service** manifests) to `ws.yaml` format
 - `changelog [latest|version]`: Shows the contents of `CHANGELOG.md` (during build-time) in the terminal
-- `help`: Displays help information for Kuba and its commands
-- `init [template]`: Initializes a new `kuba.yaml` using a template
+- `help`: Displays help information for withsecrets and its commands
+- `init [template]`: Initializes a new `ws.yaml` using a template
 - `run`: Runs an application with environment variables fetched from secrets
 - `show`: Displays the effective environment variables for a given configuration
 - `test`: Tests the configuration and secret retrieval without running an application
-- `update`: Updates Kuba to the latest version
-- `version`: Displays the current version of Kuba
+- `update`: Updates withsecrets to the latest version
+- `version`: Displays the current version of withsecrets
 
 ```sh
 # Initialize a new configuration file
-kuba init
+ws init
 
-# Initialize using a named template from ~/.config/kuba/templates
-kuba init my-template
+# Initialize using a named template from ~/.config/withsecrets/templates
+ws init my-template
 
-# Create or edit a template in ~/.config/kuba/templates
-kuba create template my-template
+# Create or edit a template in ~/.config/withsecrets/templates
+ws create template my-template
 
 # Run a command with secrets
-kuba run -- <application> [args...]
+ws run -- <application> [args...]
 
 # Test secret retrieval without running a command
-kuba test --env <environment>
+ws test --env <environment>
 
 # Show version information
-kuba version
+ws version
 
 # Show changelog (contents at built-time)
-kuba changelog
+ws changelog
 
 # Show latest release notes only
-kuba changelog latest
+ws changelog latest
 
 # Show a specific version section only
-kuba changelog v1.7.0
+ws changelog v1.7.0
 
 # Get help
-kuba --help
+ws --help
 ```
 
 **Global Flags:**
+
 - `--debug, -d`: Enable debug mode for verbose logging
 - `--version`: Show version information
 - `--help, -h`: Show help information
 
 **Run Command Flags:**
+
 - `--env, -e`: Specify environment (default: "default")
 - `--config, -c`: Path to configuration file
-- `--contain`: Only use environment variables from kuba.yaml, do not merge with OS environment
+- `--contain`: Only use environment variables from ws.yaml, do not merge with OS environment
 
 **Test Command Flags:**
+
 - `--env, -e`: Specify environment (default: "default")
 - `--config, -c`: Path to configuration file
 
@@ -273,29 +293,29 @@ Let's say you want to pass
 some secrets from GCP to your node application.
 
 ```sh
-kuba run -- node dist/server.js
+ws run -- node dist/server.js
 ```
 
 ### Using the `--contain` flag
 
 The `--contain` flag prevents the merging of the current OS environment with
-the environment variables from `kuba.yaml`.
+the environment variables from `ws.yaml`.
 
 This is useful when you want to ensure only the secrets defined in
 your configuration are available to the application.
 
 ```sh
-# Only use environment variables from kuba.yaml
-kuba run --contain -- node dist/server.js
+# Only use environment variables from ws.yaml
+ws run --contain -- node dist/server.js
 
 # Useful for Docker containers to avoid inheriting host environment
-docker run --env-file=<(kuba run --contain -- env) your-container
+docker run --env-file=<(ws run --contain -- env) your-container
 ```
 
-and your `kuba.yaml` would look something like this:
+and your `ws.yaml` would look something like this:
 
 ```yaml
-# yaml-language-server: $schema=https://kuba.mwco.app/kuba.schema.json
+# yaml-language-server: $schema=https://withsecrets.com/ws.schema.json
 ---
 # Top-level sections for different environments.
 default:
@@ -325,7 +345,6 @@ default:
       value: "hard-coded-value"
 
 ---
-
 # Settings for the development environment.
 development:
   provider: gcp
@@ -340,7 +359,6 @@ development:
       provider: aws
 
 ---
-
 # Settings for the staging environment.
 staging:
   provider: gcp
@@ -353,7 +371,6 @@ staging:
       secret-key: "staging_aws_project_secret"
       provider: aws
 ---
-
 # Settings for the production environment.
 production:
   provider: gcp
@@ -367,7 +384,7 @@ production:
       provider: aws
 ```
 
-This `kuba.yaml` file defines the secrets for different environments
+This `ws.yaml` file defines the secrets for different environments
 and maps them to environment variables. The example includes:
 
 - **Individual secrets** using `secret-key`
@@ -393,12 +410,12 @@ and a list of mappings between environment variables and secret keys.
 
 You can also specify the provider and project ID for each mapping,
 allowing you to fetch secrets from different cloud providers
-or projects as needed. Kuba currently supports GCP Secret Manager,
+or projects as needed. withsecrets currently supports GCP Secret Manager,
 AWS Secrets Manager, Azure Key Vault, and OpenBao.
 
 ### Environment variable interpolation
 
-Kuba supports environment variable interpolation
+withsecrets supports environment variable interpolation
 in the `value` field using `${VAR_NAME}` syntax.
 
 This allows you to:
@@ -459,7 +476,7 @@ This means:
 
 ### Secret path mapping
 
-In addition to individual secret keys, Kuba supports **secret path mapping** using the `secret-path` field.
+In addition to individual secret keys, withsecrets supports **secret path mapping** using the `secret-path` field.
 This feature allows you to fetch all secrets that start with a given path prefix,
 which is particularly useful for:
 
@@ -468,7 +485,8 @@ which is particularly useful for:
 - **Environment-specific configurations**: Load all secrets for a specific environment or service
 
 **How it works:**
-- When you specify a `secret-path`, Kuba will fetch all secrets that start with that path
+
+- When you specify a `secret-path`, withsecrets will fetch all secrets that start with that path
 - Each secret found will be converted to an environment variable using the pattern: `{ENVIRONMENT_VARIABLE}_{SECRET_NAME}`
 - Secret names are automatically sanitized to be valid POSIX environment variable names (uppercase, underscores only)
 
@@ -499,7 +517,7 @@ If your GCP Secret Manager contains secrets like:
 - `microservices-auth-service-token`
 - `microservices-user-service-token`
 
-Kuba will create these environment variables:
+withsecrets will create these environment variables:
 
 - `DB_CONNECTION_STRING` = value of `database-connection-string`
 - `DB_USERNAME` = value of `database-username`
@@ -530,6 +548,7 @@ default:
 ```
 
 **Important notes:**
+
 - Secret paths work with all supported providers (GCP, AWS, Azure, OpenBao)
 - The resulting environment variable names are automatically sanitized and uppercased
 - You can mix `secret-key`, `secret-path`, and `value` mappings in the same configuration
@@ -540,68 +559,68 @@ default:
 You can also specify the environment you want to use:
 
 ```sh
-kuba run --env development -- node dist/server.js
+ws run --env development -- node dist/server.js
 ```
 
 ### Testing configuration and access
 
-Use the `test` subcommand to verify that Kuba can load your configuration and
+Use the `test` subcommand to verify that withsecrets can load your configuration and
 retrieve all mapped values for an environment without executing any application:
 
 ```sh
 # Use default environment
-kuba test
+ws test
 
 # Specify an environment
-kuba test --env staging
+ws test --env staging
 
 # Point to a specific configuration file
-kuba test --config ./config/kuba.yaml --env production
+ws test --config ./config/ws.yaml --env production
 ```
 
 This is useful for validating credentials, permissions, and
 configuration mappings during setup or CI.
 
-### Update kuba to the latest version
+### Update ws to the latest version
 
-To update kuba to the latest version, run:
+To update ws to the latest version, run:
 
 ```sh
-kuba update
+ws update
 ```
 
 This fetches the latest release and replaces your
-existing kuba binary.
+existing ws binary.
 
 It also backups your current binary in case you need to revert.
 
 ### Converting dotenv (`.env*`) files
 
-To convert existing dotenv files to `kuba.yaml` format,
+To convert existing dotenv files to `ws.yaml` format,
 
 ```sh
-# Convert .env to kuba.yaml for the default environment
-kuba convert --infile .env
+# Convert .env to ws.yaml for the default environment
+ws convert --infile .env
 
-# Convert .env.staging to my-kuba.yaml for the staging environment
-kuba convert --infile .env.staging --outfile my-kuba.yaml --env staging
+# Convert .env.staging to my-ws.yaml for the staging environment
+ws convert --infile .env.staging --outfile my-ws.yaml --env staging
 ```
 
 ### Converting Knative Service (`ksvc`) manifests
 
 If you already have a Knative Service (for example a Cloud Run service) with all
-your environment variables defined, you can generate a `kuba.yaml` from that
+your environment variables defined, you can generate a `ws.yaml` from that
 manifest:
 
 ```sh
-# Convert a Knative Service manifest to kuba.yaml for the production environment
-kuba convert --from ksvc --infile service.yaml --env production
+# Convert a Knative Service manifest to ws.yaml for the production environment
+ws convert --from ksvc --infile service.yaml --env production
 ```
 
-Kuba will:
+withsecrets will:
 
 - Read the container `env` section of the Service template.
-- Convert hard-coded `value` entries into `value` mappings in `kuba.yaml`.
+- Convert hard-coded `value` entries into `value` mappings in `ws.yaml`.
 - Convert `valueFrom.secretKeyRef` entries into `secret-key` mappings, using the
   Kubernetes Secret name as the secret identifier.
 
@@ -618,19 +637,19 @@ effective environment variables for a given configuration:
 
 ```sh
 # Show environment variables for the default environment
-kuba show
+ws show
 
 # Show environment variables for the production environment
-kuba show --env production
+ws show --env production
 
 # Point to a specific configuration file and environment
-kuba show --config ./config/kuba.yaml --env staging
+ws show --config ./config/ws.yaml --env staging
 
 # Redact sensitive values
-kuba show --sensitive
+ws show --sensitive
 
 # Filter by one or more prefixes (case-insensitive)
-kuba show "db*" "api*"
+ws show "db*" "api*"
 ```
 
 ## Cloud Provider Setup
@@ -646,7 +665,7 @@ The following providers are supported:
 
 ### Bitwarden Secrets Manager (bitwarden)
 
-Kuba supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To use Bitwarden:
+withsecrets supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To use Bitwarden:
 
 1. **Authentication & organization**
 
@@ -657,7 +676,7 @@ Kuba supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To us
    export BITWARDEN_ORGANIZATION_ID="your-organization-id"
    ```
 
-   You can also set the organization ID in your `kuba.yaml` via the `project` field when using the
+   You can also set the organization ID in your `ws.yaml` via the `project` field when using the
    `bitwarden` provider; that value is treated as the Bitwarden organization ID.
 
 2. **Self-hosted Bitwarden (optional)**
@@ -671,7 +690,7 @@ Kuba supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To us
 
 3. **Persisting Bitwarden state (optional)**
 
-   By default, Kuba authenticates the Bitwarden SDK on each run using your access token only. If you
+   By default, withsecrets authenticates the Bitwarden SDK on each run using your access token only. If you
    want the SDK to reuse its own state between runs (for example to avoid re-initializing some
    internal session data), you can point it at a state file:
 
@@ -681,22 +700,22 @@ Kuba supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To us
 
    When this variable is set:
 
-   - The Bitwarden SDK will create or update the file itself when Kuba calls `AccessTokenLogin`.
-   - Subsequent Kuba runs will pass the same state file to the SDK so it can reuse whatever it
+   - The Bitwarden SDK will create or update the file itself when withsecrets calls `AccessTokenLogin`.
+   - Subsequent withsecrets runs will pass the same state file to the SDK so it can reuse whatever it
      stored there.
 
    **Recommendations:**
 
    - Treat the state file as sensitive: keep it outside your repo and out of version control.
    - Prefer a user-scoped **data** directory such as:
-     - Linux/macOS: `~/.local/share/kuba/bitwarden_state.json`
-     - Windows (PowerShell): `"$Env:LOCALAPPDATA\kuba\bitwarden_state.json"`
+     - Linux/macOS: `~/.local/share/withsecrets/bitwarden_state.json`
+     - Windows (PowerShell): `"$Env:LOCALAPPDATAwithsecretsbitwarden_state.json"`
    - You still need a valid Bitwarden access token; the state file complements it rather than
      replacing it.
 
 4. **Configuration**
 
-   In your `kuba.yaml`, specify the Bitwarden provider. The `secret-key` entries must refer to
+   In your `ws.yaml`, specify the Bitwarden provider. The `secret-key` entries must refer to
    Bitwarden **secret IDs**:
 
    ```yaml
@@ -715,12 +734,12 @@ Kuba supports Bitwarden Secrets Manager via the official Bitwarden Go SDK. To us
 
    > **Note**
    >
-   > Bitwarden does not currently support hierarchical secret-path lookups in Kuba; only
+   > Bitwarden does not currently support hierarchical secret-path lookups in withsecrets; only
    > `secret-key` mappings (by secret ID) are supported for the `bitwarden` provider.
 
 ### Google Cloud Platform (gcp)
 
-Kuba supports GCP Secret Manager for fetching secrets. To use GCP:
+withsecrets supports GCP Secret Manager for fetching secrets. To use GCP:
 
 1. **Enable Secret Manager API**: Make sure the Secret Manager API is enabled in your GCP project.
 
@@ -752,7 +771,7 @@ Kuba supports GCP Secret Manager for fetching secrets. To use GCP:
 
 ### AWS Secrets Manager (aws)
 
-Kuba supports AWS Secrets Manager for fetching secrets. To use AWS:
+withsecrets supports AWS Secrets Manager for fetching secrets. To use AWS:
 
 1. **Authentication**: Set up authentication using one of these methods:
    - **Environment Variables**: Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`:
@@ -787,9 +806,9 @@ Kuba supports AWS Secrets Manager for fetching secrets. To use AWS:
 
 ### Azure Key Vault (azure)
 
-Kuba supports Azure Key Vault for fetching secrets. To use Azure Key Vault:
+withsecrets supports Azure Key Vault for fetching secrets. To use Azure Key Vault:
 
-1. **Authentication**: Kuba supports multiple authentication methods:
+1. **Authentication**: withsecrets supports multiple authentication methods:
    - **Service Principal**: Set the following environment variables:
      ```bash
      export AZURE_KEY_VAULT_URL="https://yourvault.vault.azure.net/"
@@ -802,7 +821,7 @@ Kuba supports Azure Key Vault for fetching secrets. To use Azure Key Vault:
 
 2. **Key Vault Permissions**: Ensure your Azure credentials have the `Get` and `List` permissions for secrets in your Key Vault.
 
-3. **Configuration**: In your `kuba.yaml`, specify the Azure provider:
+3. **Configuration**: In your `ws.yaml`, specify the Azure provider:
    ```yaml
    default:
      provider: azure
@@ -815,7 +834,7 @@ Kuba supports Azure Key Vault for fetching secrets. To use Azure Key Vault:
 
 ### OpenBao (openbao)
 
-Kuba supports OpenBao for fetching secrets.
+withsecrets supports OpenBao for fetching secrets.
 OpenBao is a fork of HashiCorp Vault that provides secure secret storage and access.
 
 To use OpenBao:
@@ -823,6 +842,7 @@ To use OpenBao:
 1. **Setup**: Make sure you have an OpenBao server running and accessible.
 
 2. **Authentication**: Set up authentication using environment variables:
+
    ```bash
    export OPENBAO_ADDR="http://localhost:8200"  # Required: OpenBao server address
    export OPENBAO_TOKEN="your-openbao-token"    # Optional: Authentication token
@@ -831,7 +851,7 @@ To use OpenBao:
 
 3. **Permissions**: Ensure your OpenBao token has read permissions for the secrets you want to access.
 
-4. **Configuration**: In your `kuba.yaml`, specify the OpenBao provider:
+4. **Configuration**: In your `ws.yaml`, specify the OpenBao provider:
    ```yaml
    default:
      provider: openbao
@@ -844,7 +864,7 @@ To use OpenBao:
          value: "hard-coded-value"
    ```
 
-**Note**: OpenBao secrets are stored as key-value pairs. If a secret contains multiple keys, Kuba will return the first string value it finds. For more precise control, structure your secrets with single values or use the project field to namespace your secrets:
+**Note**: OpenBao secrets are stored as key-value pairs. If a secret contains multiple keys, withsecrets will return the first string value it finds. For more precise control, structure your secrets with single values or use the project field to namespace your secrets:
 
 ```yaml
 default:
@@ -852,5 +872,5 @@ default:
   env:
     DATABASE_URL:
       secret-key: "database-url"
-      project: "secret"  # This will look for secret/database-url
+      project: "secret" # This will look for secret/database-url
 ```

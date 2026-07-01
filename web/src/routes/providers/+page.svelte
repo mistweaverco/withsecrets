@@ -6,9 +6,9 @@
 
 <HeadComponent
 	data={{
-		title: 'Providers Setup - Kuba',
+		title: 'Providers Setup - withsecrets',
 		description:
-			'Set up authentication and permissions for GCP, AWS, Azure, OpenBao, Bitwarden, and local providers to use with Kuba.'
+			'Set up authentication and permissions for GCP, AWS, Azure, OpenBao, Bitwarden, and local providers to use with withsecrets.'
 	}}
 />
 
@@ -19,7 +19,7 @@
 				>Providers Setup</ClickableHeadline
 			>
 			<p class="text-xl text-base-content/70">
-				Configure authentication and permissions for your providers to start using Kuba securely.
+				Configure authentication and permissions for your providers to start using withsecrets securely.
 			</p>
 		</div>
 
@@ -114,7 +114,7 @@
 export BITWARDEN_ORGANIZATION_ID="your-organization-id"`}
 							/>
 							<p class="mt-4 text-sm">
-								You can also set the organization ID in your <code>kuba.yaml</code> via the
+								You can also set the organization ID in your <code>ws.yaml</code> via the
 								<code>project</code> field when using the <code>bitwarden</code> provider; that value
 								is treated as the Bitwarden organization ID.
 							</p>
@@ -135,18 +135,18 @@ export BITWARDEN_ORGANIZATION_ID="your-organization-id"`}
 export BITWARDEN_IDENTITY_URL="https://your-bitwarden.example.com/identity"`}
 							/>
 							<p class="mt-4 text-sm">
-								Optional: if you want the Bitwarden SDK to reuse its own state between Kuba runs
+								Optional: if you want the Bitwarden SDK to reuse its own state between withsecrets runs
 								(for example, to avoid re-initializing some internal session data), you can point it
 								at a state file. The SDK will create and maintain this file itself:
 							</p>
 							<CodeBlock
 								lang="bash"
-								code={`export BITWARDEN_STATE_FILE="$HOME/.local/share/kuba/bitwarden_state.json"`}
+								code={`export BITWARDEN_STATE_FILE="$HOME/.local/share/withsecrets/bitwarden_state.json"`}
 							/>
 							<p class="mt-2 text-sm">
 								Treat this file as sensitive: keep it outside version control and in a user-scoped
-								data directory (for example, <code>~/.local/share/kuba</code> on Linux/macOS or
-								<code>%LOCALAPPDATA%\kuba</code> on Windows). You still need a valid Bitwarden access
+								data directory (for example, <code>~/.local/share/withsecrets</code> on Linux/macOS or
+								<code>%LOCALAPPDATA%\withsecrets</code> on Windows). You still need a valid Bitwarden access
 								token; the state file complements it rather than replacing it.
 							</p>
 						</div>
@@ -156,12 +156,12 @@ export BITWARDEN_IDENTITY_URL="https://your-bitwarden.example.com/identity"`}
 						<div class="card-body">
 							<h3 class="card-title">3. Configuration Example</h3>
 							<p class="mb-4">
-								In your <code>kuba.yaml</code>, use the <code>bitwarden</code> provider. The
+								In your <code>ws.yaml</code>, use the <code>bitwarden</code> provider. The
 								<code>secret-key</code> values must be Bitwarden <strong>secret IDs</strong>:
 							</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`default:
   provider: bitwarden
   # Optional: if omitted, BITWARDEN_ORGANIZATION_ID must be set
@@ -175,7 +175,7 @@ export BITWARDEN_IDENTITY_URL="https://your-bitwarden.example.com/identity"`}
       value: "hard-coded-value"`}
 							/>
 							<p class="mt-4 text-sm">
-								<strong>Note:</strong> Bitwarden support in Kuba currently only supports
+								<strong>Note:</strong> Bitwarden support in withsecrets currently only supports
 								<code>secret-key</code> mappings (by secret ID). <code>secret-path</code> mappings
 								are not available for the <code>bitwarden</code> provider.
 							</p>
@@ -258,7 +258,7 @@ export BITWARDEN_IDENTITY_URL="https://your-bitwarden.example.com/identity"`}
 								<h3 class="card-title">4. Configuration Example</h3>
 								<CodeBlock
 									lang="yaml"
-									meta="path=kuba.yaml"
+									meta="path=ws.yaml"
 									code={`default:
   provider: gcp
   project: 1337
@@ -346,7 +346,7 @@ export AWS_REGION="us-east-1"`}
 							<h3 class="card-title">3. Configuration Example</h3>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`default:
   provider: aws
   env:
@@ -412,7 +412,7 @@ export AZURE_CLIENT_SECRET="your-client-secret"`}
 							<h3 class="card-title">3. Configuration Example</h3>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`default:
   provider: azure
   env:
@@ -470,7 +470,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 							<h3 class="card-title">4. Configuration Example</h3>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`default:
   provider: openbao
   env:
@@ -481,7 +481,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 							/>
 							<p class="mt-4 text-sm">
 								<strong>Note:</strong> OpenBao secrets are stored as key-value pairs. If a secret contains
-								multiple keys, Kuba will return the first string value it finds.
+								multiple keys, withsecrets will return the first string value it finds.
 							</p>
 						</div>
 					</div>
@@ -506,7 +506,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 							<h3 class="card-title">2. Configuration Example</h3>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`default:
   provider: local
   env:
@@ -529,7 +529,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 						<p class="mb-4">You can use different cloud providers in the same configuration:</p>
 						<CodeBlock
 							lang="yaml"
-							meta="path=kuba.yaml"
+							meta="path=ws.yaml"
 							code={`default:
   provider: gcp
   project: 1337
@@ -649,7 +649,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 							<p class="mb-4">
 								Enable debug mode to see detailed information about authentication and API calls:
 							</p>
-							<CodeBlock lang="bash" code={`kuba run --debug -- echo "Testing connection"`} />
+							<CodeBlock lang="bash" code={`ws run --debug -- echo "Testing connection"`} />
 						</div>
 					</div>
 				</div>
@@ -662,7 +662,7 @@ export OPENBAO_NAMESPACE="your-namespace"     # Optional: Namespace (if using en
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<h3 class="card-title">Configuration Guide</h3>
-							<p>Learn how to set up your <code>kuba.yaml</code> configuration file.</p>
+							<p>Learn how to set up your <code>ws.yaml</code> configuration file.</p>
 							<a href="/configuration" class="btn btn-outline bg-lg">Configuration Guide</a>
 						</div>
 					</div>

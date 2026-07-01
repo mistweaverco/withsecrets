@@ -3,7 +3,7 @@ package tui
 import (
 	"charm.land/bubbles/v2/list"
 
-	"github.com/mistweaverco/kuba/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/config"
 )
 
 type Screen int

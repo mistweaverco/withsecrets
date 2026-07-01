@@ -6,9 +6,9 @@
 
 <HeadComponent
 	data={{
-		title: 'Configuration Guide - Kuba',
+		title: 'Configuration Guide - withsecrets',
 		description:
-			'Learn how to configure Kuba with kuba.yaml, environment variable interpolation, and secret path mapping.'
+			'Learn how to configure withsecrets with ws.yaml, environment variable interpolation, and secret path mapping.'
 	}}
 />
 
@@ -19,7 +19,7 @@
 				>Configuration Guide</ClickableHeadline
 			>
 			<p class="text-xl text-base-content/70">
-				Learn how to configure Kuba with the <code>kuba.yaml</code> file and understand advanced features
+				Learn how to configure withsecrets with the <code>ws.yaml</code> file and understand advanced features
 				like variable interpolation and secret paths.
 			</p>
 		</div>
@@ -34,19 +34,19 @@
 					<div class="card-body">
 						<h3 class="card-title">Initialize Configuration</h3>
 						<p class="mb-4">
-							Start by creating a configuration file using the <code>kuba init</code> command:
+							Start by creating a configuration file using the <code>ws init</code> command:
 						</p>
-						<CodeBlock lang="bash" code={`kuba init`} />
+						<CodeBlock lang="bash" code={`ws init`} />
 						<p class="mt-4">
-							This will generate a default <code>kuba.yaml</code> file that you can customize for your
+							This will generate a default <code>ws.yaml</code> file that you can customize for your
 							needs.
 						</p>
 						<div class="alert alert-info mt-6">
 							<i class="fa-solid fa-info-circle mr-2"></i>
 							<span>
 								<strong>Tip:</strong> You can create your own templates (including one named
-								<code>default</code>). When you run <code>kuba init</code> without a template name,
-								Kuba will use the <code>default</code> template automatically. See
+								<code>default</code>). When you run <code>ws init</code> without a template name,
+								withsecrets will use the <code>default</code> template automatically. See
 								<a class="link" href="/usage#create-template">Create Template</a>.
 							</span>
 						</div>
@@ -62,9 +62,9 @@
 							You can also create a configuration file by importing existing environment variables
 							from a <code>.env</code> file using the following command:
 						</p>
-						<CodeBlock lang="bash" code={`kuba convert --from dotenv --infile .env`} />
+						<CodeBlock lang="bash" code={`ws convert --from dotenv --infile .env`} />
 						<p class="mt-4">
-							See <code>kuba convert --help</code> for more options on importing from different formats.
+							See <code>ws convert --help</code> for more options on importing from different formats.
 						</p>
 					</div>
 				</div>
@@ -75,27 +75,27 @@
 					<div class="card-body">
 						<ClickableHeadline level={3} id="import-from-knative-service-ksvc" className="card-title" >Import from Knative Services (ksvc)</ClickableHeadline>
 						<p class="mb-4">
-							If you're running on Cloud Run / Knative, you can generate a <code>kuba.yaml</code>
-							from an existing Knative Service manifest. Kuba will read the container
+							If you're running on Cloud Run / Knative, you can generate a <code>ws.yaml</code>
+							from an existing Knative Service manifest. withsecrets will read the container
 							<code>env</code> entries, convert hard-coded values to <code>value</code> mappings and
 							<code>valueFrom.secretKeyRef</code> entries to <code>secret-key</code> mappings.
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`kuba convert --from ksvc --infile service.yaml --env production`}
+							code={`ws convert --from ksvc --infile service.yaml --env production`}
 						/>
 						<ClickableHeadline level={4} id="import-from-knative-service-ksvc-from-deployed-service" className="card-title mt-4" >Import from already deployed service</ClickableHeadline>
 						<p class="mt-4">
 							You can also import a deployed service directly from your cloud provider (no
 							<code>--infile</code> required). This is useful when you want to bootstrap a
-							<code>kuba.yaml</code> from an existing service definition.
+							<code>ws.yaml</code> from an existing service definition.
 						</p>
 							<div class="card bg-base-300">
 								<div class="card-body">
 									<ClickableHeadline level={4} id="import-from-deployed-gcp-cloud-run-knative-service-ksvc" className="card-title" >GCP (Cloud Run)</ClickableHeadline>
 									<CodeBlock
 										lang="bash"
-										code={`kuba convert --from ksvc \
+										code={`ws convert --from ksvc \
   --provider gcp \
   --project 1337 \
   --name my-service \
@@ -111,7 +111,7 @@
 									</p>
 									<CodeBlock
 										lang="bash"
-										code={`kuba convert --from ksvc \
+										code={`ws convert --from ksvc \
   --provider aws \
   --project 123456789012 \
   --name my-service.us-east-1 \
@@ -127,7 +127,7 @@
 									</p>
 									<CodeBlock
 										lang="bash"
-										code={`kuba convert --from ksvc \
+										code={`ws convert --from ksvc \
   --provider azure \
   --project 00000000-0000-0000-0000-000000000000 \
   --name my-app.my-resource-group \
@@ -155,13 +155,13 @@
 					<div class="card-body">
 						<h3 class="card-title">Basic Structure</h3>
 						<p class="mb-4">
-							The <code>kuba.yaml</code> file is organized into environment sections, each with its own
+							The <code>ws.yaml</code> file is organized into environment sections, each with its own
 							provider and env:
 						</p>
 						<CodeBlock
 							lang="yaml"
-							meta="path=kuba.yaml"
-							code={`# yaml-language-server: $schema=https://kuba.mwco.app/kuba.schema.json
+							meta="path=ws.yaml"
+							code={`# yaml-language-server: $schema=https://withsecrets.com/ws.schema.json
 ---
 default:
   provider: gcp
@@ -239,11 +239,11 @@ production:
 				<div class="space-y-6">
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<ClickableHeadline level={3} id="kuba-yaml-env-individual-secrets" className="card-title" >Individual Secrets (secret-key)</ClickableHeadline>
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-individual-secrets" className="card-title" >Individual Secrets (secret-key)</ClickableHeadline>
 							<p class="mb-4">Fetch a single secret from your cloud provider:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`env:
   DATABASE_URL:
     secret-key: "database-connection-string"
@@ -255,11 +255,11 @@ production:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<ClickableHeadline level={3} id="kuba-yaml-env-secret-paths" className="card-title" >Secret Paths (secret-path)</ClickableHeadline>
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-secret-paths" className="card-title" >Secret Paths (secret-path)</ClickableHeadline>
 							<p class="mb-4">Fetch all secrets under a specific path prefix:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`env:
   DB:
     secret-path: "database"
@@ -275,11 +275,11 @@ production:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<ClickableHeadline level={3} id="kuba-yaml-env-hard-coded-values" className="card-title" >Hard-coded Values (value)</ClickableHeadline>
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-hard-coded-values" className="card-title" >Hard-coded Values (value)</ClickableHeadline>
 							<p class="mb-4">Set static environment variables:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`env:
   APP_ENV:
     value: "production"
@@ -300,15 +300,15 @@ production:
 
 				<div class="card bg-base-200 mb-6">
 					<div class="card-body">
-						<ClickableHeadline level={3} id="kuba-yaml-env-basic-interpolation" className="card-title" >Basic Interpolation</ClickableHeadline>
+						<ClickableHeadline level={3} id="withsecrets-yaml-env-basic-interpolation" className="card-title" >Basic Interpolation</ClickableHeadline>
 						<p class="mb-4">
-							Kuba supports environment variable interpolation using <code
+							withsecrets supports environment variable interpolation using <code
 								>$&lbrace;VAR_NAME&rbrace;</code
 							> syntax:
 						</p>
 						<CodeBlock
 							lang="yaml"
-							meta="path=kuba.yaml"
+							meta="path=ws.yaml"
 							code={`env:
   DB_PASSWORD:
     secret-key: "db-password"
@@ -322,11 +322,11 @@ production:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<ClickableHeadline level={3} id="kuba-yaml-env-system-environment-variables" className="card-title" >System Environment Variables</ClickableHeadline>
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-system-environment-variables" className="card-title" >System Environment Variables</ClickableHeadline>
 							<p>Reference system environment variables:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`API_URL:
   value: "https://api.\${DOMAIN}/v1"`}
 							/>
@@ -335,11 +335,11 @@ production:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<ClickableHeadline level={3} id="kuba-yaml-env-environment-variables-default-values" className="card-title" >Default Values</ClickableHeadline>
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-environment-variables-default-values" className="card-title" >Default Values</ClickableHeadline>
 							<p>Provide fallback values with <code>$&lbrace;VAR:-default&rbrace;</code> syntax:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`REDIS_URL:
   value: "redis://\${REDIS_HOST:-localhost}:\${REDIS_PORT:-6379}/0"`}
 							/>
@@ -370,7 +370,7 @@ production:
 						</p>
 						<CodeBlock
 							lang="yaml"
-							meta="path=kuba.yaml"
+							meta="path=ws.yaml"
 							code={`default:
   provider: gcp
   project: 1337
@@ -400,8 +400,8 @@ production:
 						<p class="mb-4">Here's a comprehensive example showing all features:</p>
 						<CodeBlock
 							lang="yaml"
-							meta="path=kuba.yaml"
-							code={`# yaml-language-server: $schema=https://kuba.mwco.app/kuba.schema.json
+							meta="path=ws.yaml"
+							code={`# yaml-language-server: $schema=https://withsecrets.com/ws.schema.json
 ---
 default:
   provider: gcp
@@ -467,51 +467,51 @@ production:
 			</section>
 
 			<div class="text-center mb-12">
-				<ClickableHeadline level={1} id="kuba-global-config" className="text-4xl font-bold mb-4"
-					>Configure Kuba itself</ClickableHeadline
+				<ClickableHeadline level={1} id="withsecrets-global-config" className="text-4xl font-bold mb-4"
+					>Configure withsecrets itself</ClickableHeadline
 				>
-				<p class="text-xl text-base-content/70">Learn how to configure Kuba itself (globally).</p>
+				<p class="text-xl text-base-content/70">Learn how to configure withsecrets itself (globally).</p>
 			</div>
 			<section>
 				<ClickableHeadline
 					level={2}
-					id="kuba-global-templates"
-					className="text-3xl font-bold mb-6">Kuba templates</ClickableHeadline
+					id="withsecrets-global-templates"
+					className="text-3xl font-bold mb-6">withsecrets templates</ClickableHeadline
 				>
 				<div class="card bg-base-200">
 					<div class="card-body">
 						<p class="mb-4">
-							You can configure the default template that Kuba uses when you run <code>kuba init</code>
+							You can configure the default template that withsecrets uses when you run <code>ws init</code>
 							without a template name.
 							To set the default template, run the following command:
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`kuba create template default
+							code={`ws create template default
 `}
 						/>
 						<p class="mb-4">
 						You can also create templates with different names and
 						specify the template to use when running
-						<code>kuba init my-template-name</code>:
+						<code>ws init my-template-name</code>:
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`kuba create template my-template-name
+							code={`ws create template my-template-name
 `}
 						/>
 						<p class="mb-4">
 						You can also create templates with different names and
 						specify the template to use when running
-						<code>kuba init my-template-name</code>:
+						<code>ws init my-template-name</code>:
 						</p>
 					</div>
 				</div>
 
 				<ClickableHeadline
 					level={2}
-					id="kuba-global-config-defaults"
-					className="text-3xl font-bold mb-6 mt-6">Kuba defaults</ClickableHeadline
+					id="withsecrets-global-config-defaults"
+					className="text-3xl font-bold mb-6 mt-6">withsecrets defaults</ClickableHeadline
 				>
 				<div class="card bg-base-200">
 					<div class="card-body">
@@ -520,23 +520,23 @@ production:
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`kuba config defaults set --provider gcp --regions europe-west3
+							code={`ws config defaults set --provider gcp --regions europe-west3
 `}
 						/>
 						<p class="mb-4">
 							This will set the default provider to GCP and the default region to <code>europe-west3</code>.
-							So, when you're using <code>kuba tui</code> and add a secret, it will default to using <code>europe-west3</code>
+							So, when you're using <code>ws tui</code> and add a secret, it will default to using <code>europe-west3</code>
 							as the region for GCP secrets.
 						</p>
 						<p class="mb-4">
-							Check <code>kuba config defaults get --help</code> for more options related to managing the defaults.
+							Check <code>ws config defaults get --help</code> for more options related to managing the defaults.
 						</p>
 					</div>
 				</div>
 
 				<ClickableHeadline
 					level={2}
-					id="kuba-global-config-cache"
+					id="withsecrets-global-config-cache"
 					className="text-3xl font-bold mb-6 mt-6">Cache</ClickableHeadline
 				>
 				<div class="card bg-base-200">
@@ -546,7 +546,7 @@ production:
 						</p>
 						<CodeBlock
 							lang="bash"
-							code={`kuba config cache --enable --ttl 14d
+							code={`ws config cache --enable --ttl 14d
 `}
 						/>
 						<p class="mb-4">
@@ -554,7 +554,7 @@ production:
 							can adjust the TTL as needed.
 						</p>
 						<p class="mb-4">
-							Check <code>kuba cache --help</code> for more options related to managing the cache.
+							Check <code>ws cache --help</code> for more options related to managing the cache.
 						</p>
 					</div>
 				</div>

@@ -10,7 +10,9 @@ build_wrapper() {
     # Build a self-contained Windows binary (no external bitwarden_c.dll).
     extra_ldflags=" -extldflags '-static'"
   fi
-  GOOS=$1 GOARCH=$2 go build -ldflags "-X 'github.com/mistweaverco/kuba/internal/lib/version.VERSION=${VERSION}'${extra_ldflags}" -o "dist/kuba-$1-$2$windows_file_extension"
+  local output="dist/ws-$1-$2$windows_file_extension"
+  GOOS=$1 GOARCH=$2 go build -ldflags "-X 'github.com/mistweaverco/withsecrets/internal/lib/version.VERSION=${VERSION}'${extra_ldflags}" -o "$output"
+  cp "$output" "dist/kuba-$1-$2$windows_file_extension"
 }
 
 build_linux_arm64() {

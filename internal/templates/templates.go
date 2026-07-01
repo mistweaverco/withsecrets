@@ -72,6 +72,10 @@ func ExistingTemplatePath(name string) (string, bool, error) {
 }
 
 func appDataPath() string {
+	if wsHome := os.Getenv("WS_HOME"); wsHome != "" {
+		_ = os.MkdirAll(wsHome, 0755)
+		return wsHome
+	}
 	if kubaHome := os.Getenv("KUBA_HOME"); kubaHome != "" {
 		_ = os.MkdirAll(kubaHome, 0755)
 		return kubaHome
@@ -80,7 +84,7 @@ func appDataPath() string {
 	if err != nil {
 		panic(err)
 	}
-	path := filepath.Join(userConfigDir, "kuba")
+	path := filepath.Join(userConfigDir, "withsecrets")
 	_ = os.MkdirAll(path, 0755)
 	return path
 }
@@ -130,7 +134,7 @@ func LoadUserTemplate(name string) ([]byte, string, error) {
 	return b, p, nil
 }
 
-// ResolveInitTemplate resolves template content for `kuba init`.
+// ResolveInitTemplate resolves template content for `ws init`.
 //
 // Rules:
 // - If `name` is provided: load that user template.

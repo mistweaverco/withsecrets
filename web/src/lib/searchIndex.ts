@@ -20,7 +20,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 		keywords: [
 			"arch",
 			"pkgbuild",
-			"kuba-bin",
+			"withsecrets-bin",
 			"pacman",
 			"makepkg",
 			"aur",
@@ -37,7 +37,8 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"zsh",
 			"bash",
 		],
-		excerpt: "Install kuba CLI on Arch (kuba-bin), other Linux distros, macOS, and Windows.",
+		excerpt:
+			"Install withsecrets CLI on Arch (withsecrets-bin), other Linux distros, macOS, and Windows.",
 	},
 	{
 		title: "Usage",
@@ -48,7 +49,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 		title: "Configuration",
 		href: "/configuration",
 		keywords: [
-			"kuba.yaml",
+			"ws.yaml",
 			"schema",
 			"env",
 			"secret-key",
@@ -59,7 +60,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"init",
 		],
 		excerpt:
-			"How to configure kuba with kuba.yaml, including schema, env interpolation, and secret management.",
+			"How to configure withsecrets with ws.yaml, including schema, env interpolation, and secret management.",
 	},
 	{
 		title: "Getting Started",
@@ -80,7 +81,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"container apps",
 		],
 		excerpt:
-			"Getting started guide for converting existing .env files or remote secrets into a kuba.yaml configuration.",
+			"Getting started guide for converting existing .env files or remote secrets into a ws.yaml configuration.",
 	},
 	{
 		title: "Import from dotenv (.env*)",
@@ -101,7 +102,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"container apps",
 		],
 		excerpt:
-			"Use kuba convert dotenv to convert an existing .env file into a kuba.yaml configuration, with support for remote secrets and providers.",
+			"Use ws convert dotenv to convert an existing .env file into a ws.yaml configuration, with support for remote secrets and providers.",
 	},
 	{
 		title: "Import from Knative Services (ksvc)",
@@ -122,20 +123,20 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"container apps",
 		],
 		excerpt:
-			"Use kuba convert ksvc to convert an existing Knative Service (ksvc) into a kuba.yaml configuration, with support for remote secrets and providers.",
+			"Use ws convert ksvc to convert an existing Knative Service (ksvc) into a ws.yaml configuration, with support for remote secrets and providers.",
 	},
 	{
-		title: "Templating kuba.yaml",
-		href: "/configuration#kuba-global-templates",
+		title: "Templating ws.yaml",
+		href: "/configuration#withsecrets-global-templates",
 		keywords: ["template", "configuration"],
 		excerpt:
-			"Use global templates to avoid repeating common configuration patterns in your kuba.yaml, and to create reusable building blocks for your secrets management.",
+			"Use global templates to avoid repeating common configuration patterns in your ws.yaml, and to create reusable building blocks for your secrets management.",
 	},
 	{
-		title: "Kuba defaults",
-		href: "/configuration#kuba-global-config-defaults",
+		title: "withsecrets defaults",
+		href: "/configuration#withsecrets-global-config-defaults",
 		keywords: ["template", "configuration", "defaults", "region"],
-		excerpt: "Setting defaults per provider that is used when you run kuba tui",
+		excerpt: "Setting defaults per provider that is used when you run ws tui",
 	},
 	{
 		title: "Import from already deployed service",
@@ -156,7 +157,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
 			"container apps",
 		],
 		excerpt:
-			"Use kuba convert --from ksvc to convert an already deployed Knative Service into a kuba.yaml configuration.",
+			"Use ws convert --from ksvc to convert an already deployed Knative Service into a ws.yaml configuration.",
 	},
 	{
 		title: "Providers",
@@ -179,67 +180,67 @@ export const SEARCH_INDEX: SearchEntry[] = [
 		title: "Examples",
 		href: "/examples",
 		keywords: ["examples"],
-		excerpt: "Find example kuba.yaml configurations",
+		excerpt: "Find example ws.yaml configurations",
 	},
 	{
 		title: "Cross provider examples",
 		href: "/examples#cross-provider-configuration",
 		keywords: ["examples", "cross provider"],
 		excerpt:
-			"Example kuba.yaml showing how to use multiple providers together to fetch secrets from GCP, AWS, and Azure in the same configuration.",
+			"Example ws.yaml showing how to use multiple providers together to fetch secrets from GCP, AWS, and Azure in the same configuration.",
 	},
 	{
 		title: "Github Actions examples",
 		href: "/examples#github-actions",
 		keywords: ["examples", "github"],
-		excerpt: "Example github-actions workflow using kuba to inject secrets into a CI job.",
+		excerpt: "Example github-actions workflow using withsecrets to inject secrets into a CI job.",
 	},
 	{
 		title: "GitLab CI examples",
 		href: "/examples#gitlab-ci",
 		keywords: ["examples", "gitlab"],
-		excerpt: "Example .gitlab-ci.yml using kuba to inject secrets into a CI job.",
+		excerpt: "Example .gitlab-ci.yml using withsecrets to inject secrets into a CI job.",
 	},
 	{
 		title: "Node.js examples",
 		href: "/examples#nodejs-express-application",
 		keywords: ["examples", "nodejs", "express", "node", "typescript"],
-		excerpt: "Example kuba.yaml for running a Node.js Express application with secrets injected.",
+		excerpt: "Example ws.yaml for running a Node.js Express application with secrets injected.",
 	},
 	{
 		title: "Python examples",
 		href: "/examples#python-flask-application",
 		keywords: ["examples", "python"],
-		excerpt: "Example kuba.yaml for running a Python Flask application with secrets injected.",
+		excerpt: "Example ws.yaml for running a Python Flask application with secrets injected.",
 	},
 	{
 		title: "Docker examples",
 		href: "/examples#docker-and-container-examples",
 		keywords: ["examples", "docker"],
-		excerpt: "Example kuba.yaml for running a Docker container with secrets injected.",
+		excerpt: "Example ws.yaml for running a Docker container with secrets injected.",
 	},
 	{
 		title: "Docker Compose examples",
 		href: "/examples#docker-compose-integration",
 		keywords: ["examples", "docker", "compose"],
-		excerpt: "Example kuba.yaml for running a Docker container with secrets injected.",
+		excerpt: "Example ws.yaml for running a Docker container with secrets injected.",
 	},
 	{
 		title: "Interactive TUI",
 		href: "/usage#tui",
 		keywords: ["tui", "interactive", "secrets", "edit", "add", "terminal ui"],
-		excerpt: "Use kuba tui to view, add, and edit secrets interactively.",
+		excerpt: "Use ws tui to view, add, and edit secrets interactively.",
 	},
 	{
 		title: "Changelog (CLI)",
 		href: "/usage#changelog",
 		keywords: ["changelog", "release notes", "latest", "version"],
-		excerpt: "Use kuba changelog to view the baked-in changelog in your terminal.",
+		excerpt: "Use ws changelog to view the baked-in changelog in your terminal.",
 	},
 	{
 		title: "Create Template",
 		href: "/usage#create-template",
-		keywords: ["create", "template", "editor", "VISUAL", "EDITOR", "kuba create template"],
-		excerpt: "Use kuba create template to create or edit your user template in $EDITOR.",
+		keywords: ["create", "template", "editor", "VISUAL", "EDITOR", "ws create template"],
+		excerpt: "Use ws create template to create or edit your user template in $EDITOR.",
 	},
 ];

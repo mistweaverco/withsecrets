@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/mistweaverco/kuba/cmd/kuba"
-	"github.com/mistweaverco/kuba/internal/lib/fileutils"
+	"github.com/mistweaverco/withsecrets/cmd/ws"
+	"github.com/mistweaverco/withsecrets/internal/lib/fileutils"
 )
 
 func main() {
-	f, err := os.OpenFile(fileutils.JoinPath(fileutils.GetTempPath(), "kuba.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(fileutils.JoinPath(fileutils.GetTempPath(), "withsecrets.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -21,5 +21,5 @@ func main() {
 	}()
 	wrt := io.Writer(f)
 	log.SetOutput(wrt)
-	kuba.Execute()
+	ws.Execute()
 }

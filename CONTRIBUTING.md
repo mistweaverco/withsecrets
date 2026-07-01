@@ -1,6 +1,6 @@
-# Contributing to Kuba
+# Contributing to withsecrets
 
-Thanks for checking out Kuba!
+Thanks for checking out withsecrets!
 We're excited to hear and learn from you.
 
 We've put together the following guidelines to
@@ -9,17 +9,17 @@ help you figure out where you can best be helpful.
 ## Table of Contents
 
 0. [Types of contributions we're looking for](#types-of-contributions-were-looking-for)
-0. [Ground rules & expectations](#ground-rules--expectations)
-0. [How to contribute](#how-to-contribute)
-0. [Style guide](#style-guide)
-  1. [Documentation](#documentation)
-  2. [Code](#code)
-0. [Setting up your environment](#setting-up-your-environment)
-0. [Community](#community)
+1. [Ground rules & expectations](#ground-rules--expectations)
+2. [How to contribute](#how-to-contribute)
+3. [Style guide](#style-guide)
+4. [Documentation](#documentation)
+5. [Code](#code)
+6. [Setting up your environment](#setting-up-your-environment)
+7. [Community](#community)
 
 ## Types of contributions we're looking for
 
-There are many ways you can directly contribute to Kuba:
+There are many ways you can directly contribute to withsecrets:
 
 - Feature requests
 - Bug reports
@@ -35,7 +35,7 @@ here are a few things we expect from you (and that you should expect from others
   We all come from different backgrounds and projects,
   which means we likely have different perspectives on "how open source is done."
   Try to listen to others rather than convince them that your way is correct.
-- Kuba is released with a [Contributor Code of Conduct](./CODE_OF_CONDUCT.md).
+- withsecrets is released with a [Contributor Code of Conduct](./CODE_OF_CONDUCT.md).
   By participating in this project, you agree to abide by its terms.
 - Please ensure that your contribution passes all tests if you open a pull request.
   If there are test failures, you will need to address them before we can merge your contribution.
@@ -46,7 +46,7 @@ here are a few things we expect from you (and that you should expect from others
 ## How to contribute
 
 If you'd like to contribute,
-start by searching through the [pull requests](https://github.com/mistweaverco/kuba/pulls) to
+start by searching through the [pull requests](https://github.com/mistweaverco/withsecrets/pulls) to
 see whether someone else has raised a similar idea or question.
 
 If you don't see your idea listed, and you think it fits into the goals of this guide, open a pull request.
@@ -76,8 +76,8 @@ so you don't need to worry about them.
 
 Discussions about the diffconflict.snvim take place on:
 
-- This repository's [Issues](https://github.com/mistweaverco/kuba/issues) and
-  [Pull Requests](https://github.com/mistweaverco/kuba/pulls) sections
+- This repository's [Issues](https://github.com/mistweaverco/withsecrets/issues) and
+  [Pull Requests](https://github.com/mistweaverco/withsecrets/pulls) sections
 - The [mistwieaverco discord server](https://mistweaverco.com/discord)
 
 Anybody is welcome to join these conversations.

@@ -1,6 +1,6 @@
-# kuba.mwco.app
+# withsecrets.com
 
-This is the source code for [kuba.mwco.app](https://kuba.mwco.app).
+This is the source code for [withsecrets.com](https://withsecrets.com).
 
 ## Developing
 

@@ -6,7 +6,7 @@ import "fmt"
 //
 // Not all providers support secret mutation, and some providers expose mutation
 // methods that don't match the generic SecretMutator signature. This helper
-// normalizes those differences for interactive tooling (e.g. `kuba tui`).
+// normalizes those differences for interactive tooling (e.g. `ws tui`).
 func AsMutator(sm SecretManager) (SecretMutator, error) {
 	if sm == nil {
 		return nil, fmt.Errorf("nil secret manager")

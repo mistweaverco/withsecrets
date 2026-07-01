@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://kuba.mwco.app/kuba-global.schema.json",
+  "$id": "https://withsecrets.com/kuba-global.schema.json",
   "title": "Global Kuba Configuration File",
-  "description": "Schema for the global kuba configuration file located at ~/.config/kuba/config.yaml",
+  "description": "Schema for the global kuba configuration file located at ~/.config/withsecrets/config.yaml (legacy: ~/.config/kuba/config.yaml)",
   "type": "object",
   "properties": {
     "cache": {

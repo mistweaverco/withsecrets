@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mistweaverco/kuba/internal/lib/log"
+	"github.com/mistweaverco/withsecrets/internal/lib/log"
 )
 
 // Manager handles caching operations with global and environment-specific settings
@@ -14,7 +14,7 @@ type Manager struct {
 	globalConfig *GlobalConfig
 }
 
-// GlobalConfig represents the global kuba configuration
+// GlobalConfig represents the global ws configuration
 type GlobalConfig struct {
 	Cache CacheConfig `yaml:"cache"`
 }
@@ -116,7 +116,7 @@ func (m *Manager) Clear() error {
 	return m.cache.Clear()
 }
 
-// ClearByPath clears all cached secrets for a specific kuba.yaml file
+// ClearByPath clears all cached secrets for a specific ws.yaml file
 func (m *Manager) ClearByPath(configPath string) error {
 	if !m.IsEnabled() {
 		return nil
@@ -168,7 +168,7 @@ func (m *Manager) GetStats() (map[string]interface{}, error) {
 	// Count entries by environment
 	envCounts := make(map[string]int)
 	for _, entry := range entries {
-		envCounts[entry.KubaEnv]++
+		envCounts[entry.ConfigEnv]++
 	}
 
 	return map[string]interface{}{

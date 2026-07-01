@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin 'daisyui' {
-	themes: dracula --default;
+	themes: night --default;
 }
 
 div p code {

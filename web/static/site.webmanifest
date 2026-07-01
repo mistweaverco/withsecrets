@@ -1,21 +1,36 @@
 {
-	"name": "Kuba Secrets Manager",
-	"short_name": "Kuba",
+	"name": "withsecrets",
+	"short_name": "ws",
+	"theme_color": "#8936FF",
+	"background_color": "#2EC6FE",
 	"icons": [
 		{
-			"src": "/web-app-manifest-192x192.png",
+			"purpose": "maskable",
 			"sizes": "192x192",
-			"type": "image/png",
-			"purpose": "maskable"
+			"src": "/web-app-manifest-maskable-192x192.png",
+			"type": "image/png"
 		},
 		{
-			"src": "/web-app-manifest-512x512.png",
+			"purpose": "any",
+			"sizes": "192x192",
+			"src": "/web-app-manifest-rounded-192x192.png",
+			"type": "image/png"
+		},
+		{
+			"purpose": "maskable",
 			"sizes": "512x512",
-			"type": "image/png",
-			"purpose": "maskable"
+			"src": "/web-app-manifest-maskable-512x512.png",
+			"type": "image/png"
+		},
+		{
+			"purpose": "any",
+			"sizes": "512x512",
+			"src": "/web-app-manifest-rounded-512x512.png",
+			"type": "image/png"
 		}
 	],
-	"theme_color": "#ffffff",
-	"background_color": "#ffffff",
-	"display": "standalone"
+	"orientation": "any",
+	"display": "standalone",
+	"dir": "auto",
+	"lang": "en-US"
 }

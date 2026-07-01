@@ -5,7 +5,7 @@
 
 <HeadComponent
 	data={{
-		title: 'Kuba - Securely and easily access your environment variables',
+		title: 'withsecrets - Securely and easily access your environment variables',
 		description:
 			'Pass env directly from GCP Secret Manager, AWS Secrets Manager, Azure Key Vault, OpenBao, Bitwarden, and more to your application.'
 	}}
@@ -14,16 +14,12 @@
 <div class="hero bg-base-200 min-h-screen">
 	<div class="hero-content text-center">
 		<div class="max-w-4xl">
-			<img src="/logo.svg" alt="Kuba" class="m-5 mx-auto w-64" />
-			<h1 class="text-5xl font-bold">Kuba</h1>
+			<img src="/logo.svg" alt="withsecrets" class="m-5 mx-auto w-64" />
+			<h1 class="text-5xl font-bold">withsecrets</h1>
+			<p class="py-2 text-2xl font-mono text-base-content/80">ws</p>
 			<p class="py-6 text-xl">Securely and easily access your environment variables</p>
-			<p class="py-4 text-lg">
-				Kuba is <a href="https://en.wikipedia.org/wiki/Swahili_language" class="link link-primary"
-					>Swahili</a
-				> for "vault."
-			</p>
 			<p class="py-4">
-				Kuba helps you to get rid of <code>.env</code> files. Pass env directly from GCP Secret Manager,
+				withsecrets helps you get rid of <code>.env</code> files. Pass env directly from GCP Secret Manager,
 				AWS Secrets Manager, Azure Key Vault, OpenBao, Bitwarden Secrets Manager, and more to your application.
 			</p>
 			<div class="flex gap-4 justify-center mt-8">
@@ -38,8 +34,8 @@
 	<div class="container mx-auto px-4">
 		<ClickableHeadline
 			level={2}
-			id="why-choose-kuba"
-			className="text-3xl font-bold text-center mb-12">Why Choose Kuba?</ClickableHeadline
+			id="why-choose-withsecrets"
+			className="text-3xl font-bold text-center mb-12">Why Choose withsecrets?</ClickableHeadline
 		>
 		<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 			<div class="card bg-base-200 shadow-xl">
@@ -53,7 +49,7 @@
 			<div class="card bg-base-200 shadow-xl">
 				<div class="card-body">
 					<h3 class="card-title">🚀 Simple</h3>
-					<p>Single binary with a simple YAML configuration file</p>
+					<p>Single binary (<code>ws</code>) with a simple YAML configuration file</p>
 				</div>
 			</div>
 			<div class="card bg-base-200 shadow-xl">
@@ -93,13 +89,13 @@
 			<div class="text-center">
 				<div class="text-4xl mb-4">1️⃣</div>
 				<h3 class="text-xl font-bold mb-4">Install</h3>
-				<p class="mb-4">Download and install Kuba on your system</p>
+				<p class="mb-4">Download and install <code>ws</code> on your system</p>
 				<a href="/installation" class="btn btn-primary">Installation Guide</a>
 			</div>
 			<div class="text-center">
 				<div class="text-4xl mb-4">2️⃣</div>
 				<h3 class="text-xl font-bold mb-4">Configure</h3>
-				<p class="mb-4">Set up your <code>kuba.yaml</code> configuration file</p>
+				<p class="mb-4">Set up your <code>ws.yaml</code> configuration file</p>
 				<a href="/configuration" class="btn btn-primary">Configuration Guide</a>
 			</div>
 			<div class="text-center">
@@ -118,11 +114,11 @@
 			>Ready to Get Started?</ClickableHeadline
 		>
 		<p class="text-lg mb-8">
-			Join the community and start managing your secrets securely with Kuba.
+			Join the community and start managing your secrets securely with withsecrets.
 		</p>
 		<div class="flex gap-4 justify-center">
-			<a href="/installation" class="btn btn-primary btn-lg">Install Kuba</a>
-			<a href="https://github.com/mistweaverco/kuba" class="btn btn-outline btn-lg"
+			<a href="/installation" class="btn btn-primary btn-lg">Install ws</a>
+			<a href="https://github.com/mistweaverco/withsecrets" class="btn btn-outline btn-lg"
 				>View on GitHub</a
 			>
 		</div>

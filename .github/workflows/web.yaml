@@ -4,7 +4,7 @@ name: Deploy Website
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
 # However, do NOT cancel in-progress runs as we want
 # to allow these production deployments to complete.
 concurrency:
-  group: 'deploy'
+  group: "deploy"
   cancel-in-progress: false
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -41,6 +41,8 @@ jobs:
             web:
               - '.github/workflows/web.yaml'
               - 'web/**'
+              - 'ws.schema.json'
+              - 'ws-global.schema.json'
               - 'kuba.schema.json'
               - 'kuba-global.schema.json'
       - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
@@ -59,11 +61,12 @@ jobs:
         name: Install dependencies
         run: vp install
       - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
-        name: Add kuba.schema.json to website
-        run: cp kuba.schema.json web/static/kuba.schema.json
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
-        name: Add kuba-global.schema.json to website
-        run: cp kuba-global.schema.json web/static/kuba-global.schema.json
+        name: Add schema files to website
+        run: |
+          cp ws.schema.json web/static/ws.schema.json
+          cp ws-global.schema.json web/static/ws-global.schema.json
+          cp kuba.schema.json web/static/kuba.schema.json
+          cp kuba-global.schema.json web/static/kuba-global.schema.json
       - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
         name: Install dependencies
         run: cd web && vp install
@@ -77,7 +80,7 @@ jobs:
         name: Upload artifact
         uses: actions/upload-pages-artifact@v4.0.0
         with:
-          path: 'web/build'
+          path: "web/build"
       - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
         name: Deploy to GitHub Pages
         id: deployment

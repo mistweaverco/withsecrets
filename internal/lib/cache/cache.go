@@ -10,7 +10,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/mistweaverco/kuba/internal/lib/log"
+	"github.com/mistweaverco/withsecrets/internal/lib/log"
 )
 
 // Cache represents a SQLite-based cache for secrets
@@ -21,7 +21,7 @@ type Cache struct {
 // CacheEntry represents a cached secret entry
 type CacheEntry struct {
 	Path      string    `json:"path"`
-	KubaEnv   string    `json:"kuba_env"`
+	ConfigEnv string    `json:"config_env"`
 	Env       string    `json:"env"`
 	Value     string    `json:"value"`
 	CreatedAt time.Time `json:"created_at"`
@@ -80,15 +80,19 @@ func (c *Cache) Close() error {
 
 // initSchema initializes the database schema
 func (c *Cache) initSchema() error {
+	if err := c.dropLegacySchema(); err != nil {
+		return err
+	}
+
 	query := `
 	CREATE TABLE IF NOT EXISTS secrets (
 		path TEXT NOT NULL,
-		kuba_env TEXT NOT NULL,
+		config_env TEXT NOT NULL,
 		env TEXT NOT NULL,
 		value TEXT NOT NULL,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		expires_at DATETIME NOT NULL,
-		PRIMARY KEY (path, kuba_env, env)
+		PRIMARY KEY (path, config_env, env)
 	);
 	
 	CREATE INDEX IF NOT EXISTS idx_expires_at ON secrets(expires_at);
@@ -96,6 +100,55 @@ func (c *Cache) initSchema() error {
 
 	_, err := c.db.Exec(query)
 	return err
+}
+
+// dropLegacySchema removes the pre-rebrand secrets table (kuba_env column) without migrating rows.
+func (c *Cache) dropLegacySchema() error {
+	var tableName string
+	err := c.db.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'secrets'`).Scan(&tableName)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := c.db.Query(`PRAGMA table_info(secrets)`)
+	if err != nil {
+		return err
+	}
+
+	hasLegacyColumn := false
+	for rows.Next() {
+		var (
+			cid       int
+			name      string
+			colType   string
+			notNull   int
+			dfltValue sql.NullString
+			pk        int
+		)
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		if name == "kuba_env" {
+			hasLegacyColumn = true
+		}
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	if hasLegacyColumn {
+		_, err := c.db.Exec(`DROP TABLE secrets`)
+		return err
+	}
+
+	return nil
 }
 
 // cleanupExpired removes expired entries from the cache
@@ -106,28 +159,28 @@ func (c *Cache) cleanupExpired() error {
 }
 
 // Set stores a secret in the cache
-func (c *Cache) Set(path, kubaEnv, env, value string, ttl time.Duration) error {
+func (c *Cache) Set(path, configEnv, env, value string, ttl time.Duration) error {
 	now := time.Now()
 	expiresAt := now.Add(ttl)
 
 	query := `
-	INSERT OR REPLACE INTO secrets (path, kuba_env, env, value, created_at, expires_at)
+	INSERT OR REPLACE INTO secrets (path, config_env, env, value, created_at, expires_at)
 	VALUES (?, ?, ?, ?, ?, ?)
 	`
 
-	_, err := c.db.Exec(query, path, kubaEnv, env, value, now, expiresAt)
+	_, err := c.db.Exec(query, path, configEnv, env, value, now, expiresAt)
 	return err
 }
 
 // Get retrieves a secret from the cache
-func (c *Cache) Get(path, kubaEnv, env string) (string, bool, error) {
+func (c *Cache) Get(path, configEnv, env string) (string, bool, error) {
 	query := `
 	SELECT value FROM secrets 
-	WHERE path = ? AND kuba_env = ? AND env = ? AND expires_at > datetime('now')
+	WHERE path = ? AND config_env = ? AND env = ? AND expires_at > datetime('now')
 	`
 
 	var value string
-	err := c.db.QueryRow(query, path, kubaEnv, env).Scan(&value)
+	err := c.db.QueryRow(query, path, configEnv, env).Scan(&value)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", false, nil
@@ -139,9 +192,9 @@ func (c *Cache) Get(path, kubaEnv, env string) (string, bool, error) {
 }
 
 // Delete removes a secret from the cache
-func (c *Cache) Delete(path, kubaEnv, env string) error {
-	query := `DELETE FROM secrets WHERE path = ? AND kuba_env = ? AND env = ?`
-	_, err := c.db.Exec(query, path, kubaEnv, env)
+func (c *Cache) Delete(path, configEnv, env string) error {
+	query := `DELETE FROM secrets WHERE path = ? AND config_env = ? AND env = ?`
+	_, err := c.db.Exec(query, path, configEnv, env)
 	return err
 }
 
@@ -152,7 +205,7 @@ func (c *Cache) Clear() error {
 	return err
 }
 
-// ClearByPath removes all secrets for a specific kuba.yaml path
+// ClearByPath removes all secrets for a specific ws.yaml path
 func (c *Cache) ClearByPath(path string) error {
 	query := `DELETE FROM secrets WHERE path = ?`
 	_, err := c.db.Exec(query, path)
@@ -160,18 +213,18 @@ func (c *Cache) ClearByPath(path string) error {
 }
 
 // ClearByEnvironment removes all secrets for a specific environment
-func (c *Cache) ClearByEnvironment(path, kubaEnv string) error {
-	query := `DELETE FROM secrets WHERE path = ? AND kuba_env = ?`
-	_, err := c.db.Exec(query, path, kubaEnv)
+func (c *Cache) ClearByEnvironment(path, configEnv string) error {
+	query := `DELETE FROM secrets WHERE path = ? AND config_env = ?`
+	_, err := c.db.Exec(query, path, configEnv)
 	return err
 }
 
 // List returns all cached entries (for debugging/inspection)
 func (c *Cache) List() ([]CacheEntry, error) {
 	query := `
-	SELECT path, kuba_env, env, value, created_at, expires_at
+	SELECT path, config_env, env, value, created_at, expires_at
 	FROM secrets
-	ORDER BY path, kuba_env, env
+	ORDER BY path, config_env, env
 	`
 
 	rows, err := c.db.Query(query)
@@ -183,7 +236,7 @@ func (c *Cache) List() ([]CacheEntry, error) {
 	var entries []CacheEntry
 	for rows.Next() {
 		var entry CacheEntry
-		err := rows.Scan(&entry.Path, &entry.KubaEnv, &entry.Env, &entry.Value, &entry.CreatedAt, &entry.ExpiresAt)
+		err := rows.Scan(&entry.Path, &entry.ConfigEnv, &entry.Env, &entry.Value, &entry.CreatedAt, &entry.ExpiresAt)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +247,7 @@ func (c *Cache) List() ([]CacheEntry, error) {
 }
 
 // ClearFiltered clears cache entries based on filters
-func (c *Cache) ClearFiltered(path, kubaEnv, env string, expiredOnly bool) (int, error) {
+func (c *Cache) ClearFiltered(path, configEnv, env string, expiredOnly bool) (int, error) {
 	logger := log.NewLogger()
 
 	// Build WHERE clause based on filters
@@ -208,9 +261,9 @@ func (c *Cache) ClearFiltered(path, kubaEnv, env string, expiredOnly bool) (int,
 		argIndex++
 	}
 
-	if kubaEnv != "" {
-		conditions = append(conditions, fmt.Sprintf("kuba_env = $%d", argIndex))
-		args = append(args, kubaEnv)
+	if configEnv != "" {
+		conditions = append(conditions, fmt.Sprintf("config_env = $%d", argIndex))
+		args = append(args, configEnv)
 		argIndex++
 	}
 
@@ -244,12 +297,12 @@ func (c *Cache) ClearFiltered(path, kubaEnv, env string, expiredOnly bool) (int,
 		return 0, fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
-	logger.Debug("Cleared cache entries", "count", rowsAffected, "path", path, "kuba_env", kubaEnv, "env", env, "expired_only", expiredOnly)
+	logger.Debug("Cleared cache entries", "count", rowsAffected, "path", path, "config_env", configEnv, "env", env, "expired_only", expiredOnly)
 	return int(rowsAffected), nil
 }
 
 // UpdateExpiry updates the expiry time for cache entries based on filters
-func (c *Cache) UpdateExpiry(path, kubaEnv, env string, newTTL time.Duration) (int, error) {
+func (c *Cache) UpdateExpiry(path, configEnv, env string, newTTL time.Duration) (int, error) {
 	logger := log.NewLogger()
 
 	// Build WHERE clause based on filters
@@ -263,9 +316,9 @@ func (c *Cache) UpdateExpiry(path, kubaEnv, env string, newTTL time.Duration) (i
 		argIndex++
 	}
 
-	if kubaEnv != "" {
-		conditions = append(conditions, fmt.Sprintf("kuba_env = $%d", argIndex))
-		args = append(args, kubaEnv)
+	if configEnv != "" {
+		conditions = append(conditions, fmt.Sprintf("config_env = $%d", argIndex))
+		args = append(args, configEnv)
 		argIndex++
 	}
 
@@ -298,32 +351,50 @@ func (c *Cache) UpdateExpiry(path, kubaEnv, env string, newTTL time.Duration) (i
 		return 0, fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
-	logger.Debug("Updated cache expiry", "count", rowsAffected, "path", path, "kuba_env", kubaEnv, "env", env, "new_ttl", newTTL, "new_expiry", newExpiryTime)
+	logger.Debug("Updated cache expiry", "count", rowsAffected, "path", path, "config_env", configEnv, "env", env, "new_ttl", newTTL, "new_expiry", newExpiryTime)
 	return int(rowsAffected), nil
 }
 
-// getCacheDir returns the cache directory path
+// getCacheDir returns the cache directory path, preferring withsecrets and
+// falling back to the legacy kuba directory when an existing database is found there.
 func getCacheDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
+	baseDir, err := cacheBaseDir()
 	if err != nil {
-		return "", fmt.Errorf("failed to get user home directory: %w", err)
+		return "", fmt.Errorf("failed to get cache base directory: %w", err)
 	}
 
-	// Use platform-specific cache directories
+	cacheDir := filepath.Join(baseDir, "withsecrets")
+	legacyCacheDir := filepath.Join(baseDir, "kuba")
+	legacyDB := filepath.Join(legacyCacheDir, "db.sqlite")
+	newDB := filepath.Join(cacheDir, "db.sqlite")
+
+	if _, err := os.Stat(newDB); os.IsNotExist(err) {
+		if _, legacyErr := os.Stat(legacyDB); legacyErr == nil {
+			return legacyCacheDir, nil
+		}
+	}
+
+	return cacheDir, nil
+}
+
+func cacheBaseDir() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
 	switch runtime.GOOS {
-	case "darwin": // macOS
-		return filepath.Join(homeDir, "Library", "Caches", "kuba"), nil
+	case "darwin":
+		return filepath.Join(homeDir, "Library", "Caches"), nil
 	case "windows":
-		// Use LOCALAPPDATA if available, otherwise fall back to AppData\Local
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
-			return filepath.Join(localAppData, "kuba"), nil
+			return localAppData, nil
 		}
-		return filepath.Join(homeDir, "AppData", "Local", "kuba"), nil
-	default: // Linux and other Unix-like systems
-		// Use XDG_CACHE_HOME if available, otherwise fall back to ~/.cache
+		return filepath.Join(homeDir, "AppData", "Local"), nil
+	default:
 		if xdgCacheHome := os.Getenv("XDG_CACHE_HOME"); xdgCacheHome != "" {
-			return filepath.Join(xdgCacheHome, "kuba"), nil
+			return xdgCacheHome, nil
 		}
-		return filepath.Join(homeDir, ".cache", "kuba"), nil
+		return filepath.Join(homeDir, ".cache"), nil
 	}
 }

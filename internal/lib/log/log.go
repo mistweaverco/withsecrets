@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/mistweaverco/kuba/internal/lib/version"
+	"github.com/mistweaverco/withsecrets/internal/lib/version"
 )
 
 var logLevel slog.Level = slog.LevelInfo

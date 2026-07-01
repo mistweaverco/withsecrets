@@ -76,9 +76,9 @@
 			</ul>
 		</div>
 		<a href="/" class="btn btn-ghost text-xl">
-			<img src="/logo.svg" alt="Kuba" class="w-8 h-8 mr-2" />
+			<img src="/logo.svg" alt="withsecrets" class="w-8 h-8 mr-2" />
 			<span class="hidden sm:inline">
-			Kuba
+			withsecrets
 			</span>
 		</a>
 	</div>
@@ -185,9 +185,9 @@
 			{/if}
 		</div>
 		<a
-			href="https://github.com/mistweaverco/kuba"
+			href="https://github.com/mistweaverco/withsecrets"
 			class="btn btn-ghost btn-circle"
-			aria-label="View Kuba on GitHub"
+			aria-label="View withsecrets on GitHub"
 		>
 			<i class="fa-brands fa-github fa-lg"></i>
 		</a>

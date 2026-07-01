@@ -1,7 +1,7 @@
 {
-  "name": "kuba",
+  "name": "withsecrets",
   "private": true,
-	"type": "module",
+  "type": "module",
   "scripts": {
     "changelog": "./scripts/generate-changelog.sh",
     "preview:docs": "mdts .",
@@ -11,14 +11,14 @@
   "devDependencies": {
     "conventional-changelog": "7.2.0",
     "mdts": "0.17.0",
-    "vite-plus": "0.1.14"
+    "vite-plus": "0.2.1"
   },
   "peerDependencies": {
     "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@10.33.0",
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.1.14",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.14"
-  }
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@0.2.1"
+  },
+  "packageManager": "pnpm@10.33.0"
 }

@@ -4,7 +4,7 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/mistweaverco/kuba/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/config"
 )
 
 func (m *Model) updateBusy(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -23,7 +23,7 @@ func (m *Model) updateBusy(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.openError(screenCreate, "Create failed", msg.err.Error())
 		}
 		// Reload config + secrets
-		if cfg, err := config.LoadKubaConfig(m.configPath); err == nil {
+		if cfg, err := config.LoadSecretsConfig(m.configPath); err == nil {
 			m.cfg = cfg
 			if env, err := m.cfg.GetEnvironment(m.selectedEnvName); err == nil {
 				m.selectedEnv = env

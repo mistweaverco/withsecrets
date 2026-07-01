@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mistweaverco/kuba/internal/config"
-	"github.com/mistweaverco/kuba/internal/lib/cache"
-	"github.com/mistweaverco/kuba/internal/lib/log"
+	"github.com/mistweaverco/withsecrets/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/lib/cache"
+	"github.com/mistweaverco/withsecrets/internal/lib/log"
 )
 
 // SecretManager defines the interface for secret management operations

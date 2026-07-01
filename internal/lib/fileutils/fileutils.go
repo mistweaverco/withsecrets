@@ -5,7 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mistweaverco/kuba/internal/templates"
+	"github.com/mistweaverco/withsecrets/internal/config"
+	"github.com/mistweaverco/withsecrets/internal/templates"
 	"github.com/spf13/afero"
 )
 
@@ -94,48 +95,47 @@ func FileExists(path string) bool {
 	return err == nil
 }
 
-// GenerateDefaultKubaConfig creates a default kuba.yaml file
-// in the current directory if it doesn't exist.
-func GenerateDefaultKubaConfig() bool {
-	fp := "kuba.yaml"
+// GenerateDefaultConfig creates a default ws.yaml file in the current directory if it doesn't exist.
+func GenerateDefaultConfig() bool {
+	fp := config.DefaultConfigFileName
 
 	if FileExists(fp) {
-		return false // File already exists, no need to create it
+		return false
 	}
 
-	// Use the same template resolution logic as `kuba init`.
 	b, _, err := templates.ResolveInitTemplate("")
 	if err != nil {
-		fmt.Println("Error loading default kuba template:", err)
+		fmt.Println("Error loading default template:", err)
 		return false
 	}
 	contents := string(b)
 
 	file, err := fileSystem.Create(fp)
 	if err != nil {
-		fmt.Println("Error creating kuba.yaml:", err)
+		fmt.Printf("Error creating %s: %v\n", fp, err)
 		return false
 	}
 	defer func() {
 		if closeErr := fileSystem.Close(file); closeErr != nil {
-			fmt.Printf("Warning: failed to close kuba.yaml file: %v\n", closeErr)
+			fmt.Printf("Warning: failed to close %s: %v\n", fp, closeErr)
 		}
 	}()
 
 	_, err = fileSystem.WriteString(file, contents)
 	if err != nil {
-		fmt.Println("Error writing to kuba.yaml:", err)
+		fmt.Printf("Error writing to %s: %v\n", fp, err)
 		return false
 	}
 
 	return true
 }
 
-// GetAppDataPath returns the path to the app data directory
-// If the KUBA_HOME environment variable is set, it will use that path
-// otherwise it will use the user's config directory
-// e.g. /home/user/.config/kuba
+// GetAppDataPath returns the path to the app data directory.
+// WS_HOME is preferred; KUBA_HOME is supported for backwards compatibility.
 func GetAppDataPath() string {
+	if wsHome := fileSystem.Getenv("WS_HOME"); wsHome != "" {
+		return EnsureDirExists(wsHome)
+	}
 	if kubaHome := fileSystem.Getenv("KUBA_HOME"); kubaHome != "" {
 		return EnsureDirExists(kubaHome)
 	}
@@ -143,7 +143,7 @@ func GetAppDataPath() string {
 	if err != nil {
 		panic(err)
 	}
-	return EnsureDirExists(userConfigDir + string(os.PathSeparator) + "kuba")
+	return EnsureDirExists(userConfigDir + string(os.PathSeparator) + config.AppConfigDirName)
 }
 
 // GetTempPath returns the path to the temp directory

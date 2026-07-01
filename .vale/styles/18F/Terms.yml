@@ -4,7 +4,7 @@ message: "Prefer %s over '%s'."
 level: warning
 ignorecase: false
 swap:
-  'e(?:-| )mail': email
+  "e(?:-| )mail": email
   (?:illegals|illegal aliens): "'undocumented immigrants'"
   back-end: "'back end'"
   citizen: "'people' or 'The public'"

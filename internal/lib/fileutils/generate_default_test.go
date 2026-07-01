@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestGenerateDefaultKubaConfigUsesUserDefaultTemplate(t *testing.T) {
+func TestGenerateDefaultConfigUsesUserDefaultTemplate(t *testing.T) {
 	wd := t.TempDir()
 	home := t.TempDir()
 	t.Setenv("KUBA_HOME", home)
@@ -27,20 +27,20 @@ func TestGenerateDefaultKubaConfigUsesUserDefaultTemplate(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(oldWD) }()
 
-	if ok := GenerateDefaultKubaConfig(); !ok {
-		t.Fatalf("GenerateDefaultKubaConfig() returned false")
+	if ok := GenerateDefaultConfig(); !ok {
+		t.Fatalf("GenerateDefaultConfig() returned false")
 	}
 
-	got, err := os.ReadFile(filepath.Join(wd, "kuba.yaml"))
+	got, err := os.ReadFile(filepath.Join(wd, "ws.yaml"))
 	if err != nil {
-		t.Fatalf("read generated kuba.yaml: %v", err)
+		t.Fatalf("read generated ws.yaml: %v", err)
 	}
 	if string(got) != expected {
-		t.Fatalf("generated kuba.yaml mismatch.\nwant:\n%s\ngot:\n%s", expected, string(got))
+		t.Fatalf("generated ws.yaml mismatch.\nwant:\n%s\ngot:\n%s", expected, string(got))
 	}
 }
 
-func TestGenerateDefaultKubaConfigFallsBackToEmbeddedTemplate(t *testing.T) {
+func TestGenerateDefaultConfigFallsBackToEmbeddedTemplate(t *testing.T) {
 	wd := t.TempDir()
 	t.Setenv("KUBA_HOME", t.TempDir())
 
@@ -50,13 +50,13 @@ func TestGenerateDefaultKubaConfigFallsBackToEmbeddedTemplate(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(oldWD) }()
 
-	if ok := GenerateDefaultKubaConfig(); !ok {
-		t.Fatalf("GenerateDefaultKubaConfig() returned false")
+	if ok := GenerateDefaultConfig(); !ok {
+		t.Fatalf("GenerateDefaultConfig() returned false")
 	}
 
-	got, err := os.ReadFile(filepath.Join(wd, "kuba.yaml"))
+	got, err := os.ReadFile(filepath.Join(wd, "ws.yaml"))
 	if err != nil {
-		t.Fatalf("read generated kuba.yaml: %v", err)
+		t.Fatalf("read generated ws.yaml: %v", err)
 	}
 	if !strings.Contains(string(got), "insert_provider_here") {
 		t.Fatalf("expected embedded template content, got: %s", string(got))

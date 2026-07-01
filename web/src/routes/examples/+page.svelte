@@ -6,9 +6,9 @@
 
 <HeadComponent
 	data={{
-		title: 'Examples - Kuba',
+		title: 'Examples - withsecrets',
 		description:
-			'Practical examples and use cases for using Kuba with different applications and frameworks.'
+			'Practical examples and use cases for using withsecrets with different applications and frameworks.'
 	}}
 />
 
@@ -19,7 +19,7 @@
 				>Examples &amp; Use Cases</ClickableHeadline
 			>
 			<p class="text-xl text-base-content/70">
-				See practical examples of how to use Kuba with different applications, frameworks, and
+				See practical examples of how to use withsecrets with different applications, frameworks, and
 				deployment scenarios.
 			</p>
 		</div>
@@ -40,17 +40,17 @@
 							<p class="mb-4">
 								Run a Node.js Express application with database credentials and API keys:
 							</p>
-							<CodeBlock lang="bash" code={`kuba run --env production -- node app.js`} />
+							<CodeBlock lang="bash" code={`ws run --env production -- node app.js`} />
 
 							<ClickableHeadline
 								level={4}
-								id="nodejs-kuba-configuration"
+								id="nodejs-withsecrets-configuration"
 								className="font-bold mt-4 mb-2 text-left"
-								>Configuration (kuba.yaml):</ClickableHeadline
+								>Configuration (ws.yaml):</ClickableHeadline
 							>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`production:
   provider: gcp
   project: 1337
@@ -100,17 +100,17 @@ app.listen(3000, () => {
 							<p class="mb-4">
 								Run a Python Flask application with environment-specific configurations:
 							</p>
-							<CodeBlock lang="bash" code={`kuba run --env development -- python app.py`} />
+							<CodeBlock lang="bash" code={`ws run --env development -- python app.py`} />
 
 							<ClickableHeadline
 								level={4}
-								id="python-kuba-configuration"
+								id="python-withsecrets-configuration"
 								className="font-bold mt-4 mb-2 text-left"
-								>Configuration (kuba.yaml):</ClickableHeadline
+								>Configuration (ws.yaml):</ClickableHeadline
 							>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`development:
   provider: aws
   env:
@@ -170,21 +170,21 @@ if __name__ == '__main__':
 							<CodeBlock
 								lang="bash"
 								code={`# Run migrations with production database credentials
-kuba run --env production -- npm run migrate
+ws run --env production -- npm run migrate
 
 # Run seed data with development database
-kuba run --env development -- npm run seed`}
+ws run --env development -- npm run seed`}
 							/>
 
 							<ClickableHeadline
 								level={4}
-								id="database-migrations-kuba-configuraton"
+								id="database-migrations-withsecrets-configuraton"
 								className="font-bold mt-4 mb-2 text-left"
-								>Configuration (kuba.yaml):</ClickableHeadline
+								>Configuration (ws.yaml):</ClickableHeadline
 							>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`production:
   provider: gcp
   project: 1337
@@ -211,17 +211,17 @@ development:
 								>External API Integration</ClickableHeadline
 							>
 							<p class="mb-4">Connect to external APIs with secure keys:</p>
-							<CodeBlock lang="bash" code={`kuba run --env staging -- python api_client.py`} />
+							<CodeBlock lang="bash" code={`ws run --env staging -- python api_client.py`} />
 
 							<ClickableHeadline
 								level={4}
-								id="external-api-integration-kuba-configuration"
+								id="external-api-integration-withsecrets-configuration"
 								className="font-bold mt-4 mb-2 text-left"
-								>Configuration (kuba.yaml):</ClickableHeadline
+								>Configuration (ws.yaml):</ClickableHeadline
 							>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`staging:
   provider: azure
   env:
@@ -280,28 +280,28 @@ print("Twilio credentials configured:", bool(os.environ.get('TWILIO_ACCOUNT_SID'
 							<ClickableHeadline level={3} id="docker-container-with-secrets" className="card-title"
 								>Docker Container with Secrets</ClickableHeadline
 							>
-							<p class="mb-4">Run Docker containers with environment variables from Kuba:</p>
+							<p class="mb-4">Run Docker containers with environment variables from withsecrets:</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Build image with secrets available during build
-kuba run --env production -- docker build \
+ws run --env production -- docker build \
   --build-arg DATABASE_URL \
   --build-arg API_KEY \
   -t myapp .
 
 # Run container with secrets as environment variables
-kuba run --env production -- docker run \
+ws run --env production -- docker run \
   -e DATABASE_URL \
   -e API_KEY \
   -e REDIS_URL \
   -p 3000:3000 \
   myapp
 
-# Only pass kuba-managed environment variables (not host environment)
-docker run --env-file=<(kuba show --output dotenv --env production) myapp
+# Only pass withsecrets-managed environment variables (not host environment)
+docker run --env-file=<(ws show --output dotenv --env production) myapp
 
-# or pass full host environment including kuba-managed vars
-docker run --env-file=<(kuba run --env production -- env) myapp
+# or pass full host environment including withsecrets-managed vars
+docker run --env-file=<(ws run --env production -- env) myapp
 							`}
 							/>
 
@@ -340,14 +340,14 @@ CMD ["npm", "start"]`}
 							<ClickableHeadline level={3} id="docker-compose-integration" className="card-title"
 								>Docker Compose Integration</ClickableHeadline
 							>
-							<p class="mb-4">Use Kuba with Docker Compose for multi-service applications:</p>
+							<p class="mb-4">Use withsecrets with Docker Compose for multi-service applications:</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Start all services with production secrets
-kuba run --env production -- docker-compose up -d
+ws run --env production -- docker-compose up -d
 
 # Start specific service with development secrets
-kuba run --env development -- docker-compose up web`}
+ws run --env development -- docker-compose up web`}
 							/>
 
 							<ClickableHeadline
@@ -407,7 +407,7 @@ volumes:
 							<ClickableHeadline level={3} id="github-actions" className="card-title"
 								>GitHub Actions</ClickableHeadline
 							>
-							<p class="mb-4">Integrate Kuba into GitHub Actions workflows:</p>
+							<p class="mb-4">Integrate withsecrets into GitHub Actions workflows:</p>
 							<CodeBlock
 								lang="yaml"
 								meta="path=.github/workflows/deploy.yaml"
@@ -428,9 +428,9 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Install Kuba
+      - name: Install withsecrets
         run: |
-          curl -sSL https://kuba.mwco.app/install.sh | bash
+          curl -sSL https://withsecrets.com/install.sh | bash
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -441,8 +441,8 @@ jobs:
 
       - name: Build and deploy
         run: |
-          kuba run --env production -- npm run build
-          kuba run --env production -- npm run deploy`}
+          ws run --env production -- npm run build
+          ws run --env production -- npm run deploy`}
 							/>
 						</div>
 					</div>
@@ -452,7 +452,7 @@ jobs:
 							<ClickableHeadline level={3} id="gitlab-ci" className="card-title"
 								>GitLab CI</ClickableHeadline
 							>
-							<p class="mb-4">Use Kuba in GitLab CI/CD pipelines:</p>
+							<p class="mb-4">Use withsecrets in GitLab CI/CD pipelines:</p>
 							<CodeBlock
 								lang="yaml"
 								meta="path=.gitlab-ci.yml"
@@ -461,15 +461,15 @@ jobs:
   - deploy
 
 variables:
-  KUBE_CONFIG_FILE: $CI_PROJECT_DIR/kuba.yaml
+  KUBE_CONFIG_FILE: $CI_PROJECT_DIR/ws.yaml
 
 test:
   stage: test
   image: node:18
   before_script:
-    - curl -sSL https://kuba.mwco.app/install.sh | bash
+    - curl -sSL https://withsecrets.com/install.sh | bash
   script:
-    - kuba run --env testing -- npm test
+    - ws run --env testing -- npm test
   only:
     - merge_requests
 
@@ -477,9 +477,9 @@ deploy:
   stage: deploy
   image: node:18
   before_script:
-    - curl -sSL https://kuba.mwco.app/install.sh | bash
+    - curl -sSL https://withsecrets.com/install.sh | bash
   script:
-    - kuba run --env production -- npm run deploy
+    - ws run --env production -- npm run deploy
   only:
     - main`}
 							/>
@@ -502,32 +502,32 @@ deploy:
 								>Local Development</ClickableHeadline
 							>
 							<p class="mb-4">
-								Use Kuba for local development without managing <code>.env</code> files:
+								Use withsecrets for local development without managing <code>.env</code> files:
 							</p>
 							<CodeBlock
 								lang="bash"
 								code={`# Start development server
-kuba run --env development -- npm run dev
+ws run --env development -- npm run dev
 
 # Run tests
-kuba run --env testing -- npm test
+ws run --env testing -- npm test
 
 # Run database migrations
-kuba run --env development -- npm run migrate
+ws run --env development -- npm run migrate
 
 # Start background services
-kuba run --env development -- npm run start:services`}
+ws run --env development -- npm run start:services`}
 							/>
 
 							<ClickableHeadline
 								level={4}
-								id="local-development-kuba-configuration"
+								id="local-development-withsecrets-configuration"
 								className="font-bold mt-4 mb-2 text-left"
-								>Configuration (kuba.yaml):</ClickableHeadline
+								>Configuration (ws.yaml):</ClickableHeadline
 							>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`development:
   provider: gcp
   project: 1337
@@ -563,8 +563,8 @@ testing:
 							<p class="mb-4">Share configuration templates with your team:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
-								code={`# kuba.yaml (commit this to version control)
+								meta="path=ws.yaml"
+								code={`# ws.yaml (commit this to version control)
 default:
   provider: gcp
   project: 1337
@@ -592,7 +592,7 @@ development:
 							<ol class="list-decimal list-inside space-y-2">
 								<li>Set up authentication for your cloud provider</li>
 								<li>Create the necessary secrets in your cloud provider</li>
-								<li>Run <code>kuba run --env development -- npm run dev</code></li>
+								<li>Run <code>ws run --env development -- npm run dev</code></li>
 							</ol>
 						</div>
 					</div>
@@ -615,7 +615,7 @@ development:
 							<p class="mb-4">Use secret paths to bulk-load related secrets:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`production:
   provider: gcp
   project: 1337
@@ -660,7 +660,7 @@ development:
 							<p class="mb-4">Use different cloud providers for different types of secrets:</p>
 							<CodeBlock
 								lang="yaml"
-								meta="path=kuba.yaml"
+								meta="path=ws.yaml"
 								code={`production:
   provider: gcp
   project: 1337

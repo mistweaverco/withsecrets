@@ -10,8 +10,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # GitHub repository details
-REPO="mistweaverco/kuba"
-BINARY_NAME="kuba"
+REPO="mistweaverco/withsecrets"
+BINARY_NAME="ws"
+LEGACY_BINARY_NAME="kuba"
 
 # Function to print colored output
 print_status() {
@@ -89,7 +90,7 @@ get_latest_version() {
 download_binary() {
     local version="$1"
     local platform="$2"
-    local download_url="https://github.com/${REPO}/releases/download/${version}/kuba-${platform}"
+    local download_url="https://github.com/${REPO}/releases/download/${version}/ws-${platform}"
 
     if [[ "$platform" = *"windows"* ]]; then
         download_url="${download_url}.exe"
@@ -186,6 +187,16 @@ install_binary() {
     # Install binary
     if cp "$source_path" "$install_path"; then
         print_success "${BINARY_NAME} installed successfully to ${install_path}"
+
+        # Create kuba compatibility symlink in the same directory
+        local install_dir
+        install_dir=$(dirname "$install_path")
+        local legacy_path="${install_dir}/${LEGACY_BINARY_NAME}"
+        if [ -L "$legacy_path" ] || [ -f "$legacy_path" ]; then
+            rm -f "$legacy_path"
+        fi
+        ln -sf "$install_path" "$legacy_path"
+        print_status "Created ${LEGACY_BINARY_NAME} compatibility symlink at ${legacy_path}"
 
         # Add to PATH if installing to user directory
         if [[ "$install_path" == *"/.local/bin"* ]]; then
@@ -306,7 +317,7 @@ main() {
 if [[ "$(uname -s)" == *"MINGW"* ]] || [[ "$(uname -s)" == *"MSYS"* ]]; then
     print_error "This script is designed for Unix-like systems (Linux/macOS)"
     print_error "For Windows, please use the PowerShell installation script:"
-    print_error "iwr https://kuba.mwco.app/install.ps1 -useb | iex"
+    print_error "iwr https://withsecrets.com/install.ps1 -useb | iex"
     print_error "Or download and run: .\install.ps1"
     exit 1
 fi
