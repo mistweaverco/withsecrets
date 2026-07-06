@@ -7,6 +7,8 @@ DIST_DIR="$ROOT/internal/gui/dist"
 
 cd "$GUI_DIR"
 
+vp run build
+
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 cp -a "$GUI_DIR/build/." "$DIST_DIR/"

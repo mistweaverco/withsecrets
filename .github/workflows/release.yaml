@@ -14,18 +14,16 @@ jobs:
         uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-      - uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version: 24
       - name: Cache Vite-Plus dependencies
         uses: actions/cache@v5.0.4
         with:
           path: ~/.vite-plus
-          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: release-vite-plus-changelog-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Install dependencies
-        run: vp install
+            release-vite-plus-changelog-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
       - name: Set up env
         run: |
           VERSION=${GITHUB_REF_NAME#v}
@@ -59,18 +57,16 @@ jobs:
           go-version: 1.26
       - name: Install C toolchain
         run: sudo apt-get update && sudo apt-get install -y build-essential
-      - uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version: 24
       - name: Cache Vite-Plus dependencies
         uses: actions/cache@v5.0.4
         with:
           path: ~/.vite-plus
-          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: release-vite-plus-linux-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Install GUI dependencies
-        run: vp install
+            release-vite-plus-linux-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
@@ -114,18 +110,16 @@ jobs:
         uses: actions/setup-go@v6.3.0
         with:
           go-version: 1.26
-      - uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version: 24
       - name: Cache Vite-Plus dependencies
         uses: actions/cache@v5.0.4
         with:
           path: ~/.vite-plus
-          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: release-vite-plus-macos-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Install GUI dependencies
-        run: vp install
+            release-vite-plus-macos-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
@@ -248,18 +242,16 @@ jobs:
         run: |
           "CC=gcc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "CGO_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - uses: voidzero-dev/setup-vp@v1
-        with:
-          node-version: 24
       - name: Cache Vite-Plus dependencies
         uses: actions/cache@v5.0.4
         with:
           path: ~/.vite-plus
-          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: release-vite-plus-windows-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Install GUI dependencies
-        run: vp install
+            release-vite-plus-windows-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
