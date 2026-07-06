@@ -6,13 +6,6 @@ GUI_DIR="$ROOT/gui"
 DIST_DIR="$ROOT/internal/gui/dist"
 
 cd "$GUI_DIR"
-if command -v vp >/dev/null 2>&1; then
-  vp install
-  vp run build
-else
-  pnpm install
-  pnpm run build
-fi
 
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
