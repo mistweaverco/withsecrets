@@ -72,6 +72,21 @@ please follow these configurations:
 Most of them are automatically checked by the CI,
 so you don't need to worry about them.
 
+### GUI (`ws gui`)
+
+The web GUI lives in `gui/` (SvelteKit + Melt UI). Shared CRUD logic is in `internal/guiapi/`.
+
+```bash
+# Build GUI assets and embed them into the Go binary
+./scripts/build-gui.sh
+
+# Develop the frontend (proxy /api to a running ws gui server)
+ws gui --no-browser
+pnpm --dir gui dev
+```
+
+Release builds run `build-gui.sh` automatically via `scripts/build.sh`.
+
 ## Community
 
 Discussions about the diffconflict.snvim take place on:

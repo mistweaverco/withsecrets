@@ -5,5 +5,9 @@ coverage.out
 dist/
 node_modules/
 
+# GUI embed artifacts (placeholder index.html is committed for bare go build)
+internal/gui/dist/**
+!internal/gui/dist/index.html
+
 # Auto generated files
 /internal/changelog/changelog.md

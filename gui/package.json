@@ -1,0 +1,27 @@
+{
+	"name": "withsecrets-gui",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+	},
+	"devDependencies": {
+		"@melt-ui/pp": "0.3.2",
+		"@melt-ui/svelte": "0.86.6",
+		"@sveltejs/adapter-static": "3.0.10",
+		"@sveltejs/kit": "2.56.1",
+		"@sveltejs/vite-plugin-svelte": "7.0.0",
+		"@tailwindcss/vite": "4.2.2",
+		"svelte": "5.55.1",
+		"svelte-check": "4.4.6",
+		"tailwindcss": "4.2.2",
+		"typescript": "5.9.3",
+		"vite": "8.0.5",
+		"vite-plus": "0.2.1"
+	},
+	"packageManager": "pnpm@10.33.0"
+}

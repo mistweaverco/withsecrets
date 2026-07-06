@@ -14,7 +14,7 @@ import (
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/mistweaverco/withsecrets/internal/config"
-	"github.com/mistweaverco/withsecrets/internal/lib/secrets"
+	"github.com/mistweaverco/withsecrets/internal/guiapi"
 )
 
 type Model struct {
@@ -267,47 +267,30 @@ func (m *Model) reloadSecrets() error {
 		return fmt.Errorf("no environment selected")
 	}
 
-	factory := secrets.NewSecretManagerFactory()
-	values, err := factory.GetSecretsForEnvironmentWithCache(m.ctx, m.selectedEnv, m.configPath, m.selectedEnvName)
+	apiRows, err := guiapi.ListSecrets(m.ctx, m.configPath, m.selectedEnvName)
 	if err != nil {
 		return err
 	}
 
 	items := m.selectedEnv.GetEnvItems()
-	rows := make([]secretRow, 0, len(items))
+	itemByVar := make(map[string]config.EnvItem, len(items))
 	for _, it := range items {
-		provider := it.Provider
-		if provider == "" {
-			provider = m.selectedEnv.Provider
-		}
-		project := it.Project
-		if project == "" {
-			project = m.selectedEnv.Project
-		}
+		itemByVar[it.EnvironmentVariable] = it
+	}
 
-		refKind := "value"
-		ref := ""
-		if it.SecretKey != "" {
-			refKind = "secret-key"
-			ref = it.SecretKey
-		} else if it.SecretPath != "" {
-			refKind = "secret-path"
-			ref = it.SecretPath
-		}
-
-		val := values[it.EnvironmentVariable]
+	rows := make([]secretRow, 0, len(apiRows))
+	for _, r := range apiRows {
 		rows = append(rows, secretRow{
-			envVar:   it.EnvironmentVariable,
-			value:    val,
-			item:     it,
-			provider: provider,
-			project:  project,
-			refKind:  refKind,
-			ref:      ref,
+			envVar:   r.EnvVar,
+			value:    r.Value,
+			item:     itemByVar[r.EnvVar],
+			provider: r.Provider,
+			project:  r.Project,
+			refKind:  r.RefKind,
+			ref:      r.Ref,
 		})
 	}
 
-	sort.Slice(rows, func(i, j int) bool { return rows[i].envVar < rows[j].envVar })
 	m.allRows = rows
 	m.applyFilterToTable()
 	return nil
@@ -341,13 +324,7 @@ func (m *Model) applyFilterToTable() {
 }
 
 func mask(v string) string {
-	if v == "" {
-		return ""
-	}
-	if len(v) <= 4 {
-		return strings.Repeat("•", len(v))
-	}
-	return strings.Repeat("•", 8)
+	return guiapi.MaskValue(v)
 }
 
 func (m *Model) viewSecrets() string {
@@ -593,19 +570,7 @@ func (m *Model) updateEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) saveEdit(row secretRow, newValue string) error {
-	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(m.ctx, row.provider, row.project)
-	if err != nil {
-		return err
-	}
-	defer sm.Close()
-
-	mut, err := secrets.AsMutator(sm)
-	if err != nil {
-		return err
-	}
-
-	return mut.UpdateSecret(row.ref, newValue)
+	return guiapi.UpdateSecret(m.ctx, m.configPath, m.selectedEnvName, row.envVar, newValue)
 }
 
 func (m *Model) updateCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -812,35 +777,16 @@ func (m *Model) updateError(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) doDelete(row secretRow) error {
-	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(m.ctx, row.provider, row.project)
-	if err != nil {
-		return err
-	}
-	defer sm.Close()
-
-	mut, err := secrets.AsMutator(sm)
-	if err != nil {
+	if err := guiapi.DeleteSecret(m.ctx, m.configPath, m.selectedEnvName, row.envVar); err != nil {
 		return err
 	}
 
-	if err := mut.DeleteSecret(row.ref, true); err != nil {
-		return err
-	}
-
-	// Also remove the mapping from ws.yaml so it doesn't reappear on refresh.
-	if err := config.RemoveEnvMapping(m.configPath, m.selectedEnvName, row.envVar); err != nil {
-		return err
-	}
-
-	// Reload config/env so subsequent actions use updated inheritance/mappings.
 	if cfg, err := config.LoadSecretsConfig(m.configPath); err == nil {
 		m.cfg = cfg
 		if env, err := m.cfg.GetEnvironment(m.selectedEnvName); err == nil {
 			m.selectedEnv = env
 		}
 	}
-
 	return nil
 }
 
