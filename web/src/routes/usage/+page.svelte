@@ -352,6 +352,43 @@ ws tui --config ./config/ws.yaml`}
 			</section>
 
 			<section>
+				<ClickableHeadline level={2} id="gui" className="text-3xl font-bold mb-6"
+					>GUI</ClickableHeadline
+				>
+				<div class="space-y-6">
+					<div class="card bg-base-200">
+						<div class="card-body">
+							<h3 class="card-title">Web GUI for environments and secrets</h3>
+							<p class="mb-4">
+								withsecrets can launch a local web interface for viewing, creating, editing, and
+								deleting secrets. The server listens on <code>127.0.0.1</code> only (default port
+								<code>11911</code>) and opens your default browser.
+							</p>
+							<CodeBlock
+								lang="bash"
+								code={`# Uses ./ws.yaml if present, otherwise searches parent directories
+ws gui
+
+# Or point to a specific file
+ws gui --config ./config/ws.yaml
+
+# Skip opening the browser automatically
+ws gui --no-browser`}
+							/>
+							<div class="alert alert-info mt-4">
+								<i class="fa-solid fa-info-circle mr-2"></i>
+								<span>
+									The GUI provides the same CRUD capabilities as <code>ws tui</code>. Make sure
+									you’ve set up auth for your provider(s) first (see
+									<a class="link" href="/providers">Providers</a>).
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section>
 				<ClickableHeadline level={2} id="changelog" className="text-3xl font-bold mb-6"
 					>Changelog</ClickableHeadline
 				>

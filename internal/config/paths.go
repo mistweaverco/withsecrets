@@ -70,6 +70,16 @@ func CacheDir(homeDir string) string {
 	return filepath.Join(homeDir, ".cache", AppConfigDirName)
 }
 
+// GUIDir returns the GUI cache directory (~/.cache/withsecrets/gui).
+func GUIDir(homeDir string) string {
+	return filepath.Join(CacheDir(homeDir), "gui")
+}
+
+// GUIWebDir returns the extracted GUI static assets directory.
+func GUIWebDir(homeDir string) string {
+	return filepath.Join(GUIDir(homeDir), "web")
+}
+
 // LegacyCacheDir returns the legacy kuba cache directory.
 func LegacyCacheDir(homeDir string) string {
 	return filepath.Join(homeDir, ".cache", LegacyAppConfigDirName)

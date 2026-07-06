@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "changelog": "./scripts/generate-changelog.sh",
+    "build:gui": "./scripts/build-gui.sh",
     "preview:docs": "mdts .",
     "preview:web": "mdts .",
     "prepare": "vp config"

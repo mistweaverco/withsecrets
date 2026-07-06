@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+"$ROOT/scripts/build-gui.sh"
+
 build_wrapper() {
   echo "Building for $1 $2"
   local windows_file_extension=""

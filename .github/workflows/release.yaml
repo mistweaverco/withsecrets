@@ -59,6 +59,18 @@ jobs:
           go-version: 1.26
       - name: Install C toolchain
         run: sudo apt-get update && sudo apt-get install -y build-essential
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
+      - name: Cache Vite-Plus dependencies
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.vite-plus
+          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Install GUI dependencies
+        run: vp install
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
@@ -102,6 +114,18 @@ jobs:
         uses: actions/setup-go@v6.3.0
         with:
           go-version: 1.26
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
+      - name: Cache Vite-Plus dependencies
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.vite-plus
+          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Install GUI dependencies
+        run: vp install
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
@@ -224,6 +248,18 @@ jobs:
         run: |
           "CC=gcc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "CGO_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 24
+      - name: Cache Vite-Plus dependencies
+        uses: actions/cache@v5.0.4
+        with:
+          path: ~/.vite-plus
+          key: release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            release-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Install GUI dependencies
+        run: vp install
       - name: Download changelog artifact
         uses: actions/download-artifact@v8.0.1
         with:
