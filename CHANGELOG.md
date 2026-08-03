@@ -1,3 +1,13 @@
+## 2.2.0 (2026-08-03)
+
+* chore(docs): update CHANGELOG.md ([c02fdc9](https://github.com/mistweaverco/withsecrets/commit/c02fdc9))
+* chore(docs): update CHANGELOG.md ([589c3fe](https://github.com/mistweaverco/withsecrets/commit/589c3fe))
+* feat(gui): add GUI support ([449aed4](https://github.com/mistweaverco/withsecrets/commit/449aed4))
+* feat(gui): more colors + hide disabled buttons ([9827b2e](https://github.com/mistweaverco/withsecrets/commit/9827b2e))
+* fix(ci): build-gui ([4204a00](https://github.com/mistweaverco/withsecrets/commit/4204a00))
+* fix(ci): remove vp install from build-gui.sh ([d833ca2](https://github.com/mistweaverco/withsecrets/commit/d833ca2))
+* fix(ci): update lockfile ([c392f9c](https://github.com/mistweaverco/withsecrets/commit/c392f9c))
+
 ## <small>2.0.2 (2026-07-01)</small>
 
 * fix(PKGBUILD): clean up variable assignment ([4e6538f](https://github.com/mistweaverco/withsecrets/commit/4e6538f))
