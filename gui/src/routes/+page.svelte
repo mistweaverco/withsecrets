@@ -86,8 +86,10 @@
 
 	const filteredSecrets = $derived(
 		secrets.filter((row) => {
-			const q = filter.trim().toLowerCase();
-			if (!q) return true;
+    const q = filter.trim().toLowerCase();
+			if (!q) {
+        return true;
+      }
 			return (
 				row.envVar.toLowerCase().includes(q) ||
 				row.ref.toLowerCase().includes(q) ||
@@ -327,16 +329,16 @@
 								</td>
 								<td class="text-right">
 									<div class="flex justify-end gap-2">
-										<button type="button" class="ghost" onclick={() => openView(row)}>View</button>
+										<button type="button" class="success" onclick={() => openView(row)}>View</button>
 										<button
 											type="button"
-											class="ghost"
+											class="{row.refKind === "secret-key" ? "warning" : "invisible"}"
 											disabled={row.refKind !== "secret-key"}
 											onclick={() => openEdit(row)}>Edit</button
 										>
 										<button
 											type="button"
-											class="ghost"
+											class="{row.refKind === "secret-key" ? "danger" : "invisible"}"
 											disabled={row.refKind !== "secret-key"}
 											onclick={() => openDelete(row)}>Delete</button
 										>
