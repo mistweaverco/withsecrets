@@ -4,6 +4,7 @@
 coverage.out
 dist/
 node_modules/
+.svelte-kit
 
 # GUI embed artifacts (placeholder index.html is committed for bare go build)
 internal/gui/dist/**
