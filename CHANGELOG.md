@@ -1,17 +1,20 @@
-## Unreleased
+## 2.3.0 (2026-08-12)
 
-* feat(aws): add optional `region` in ws.yaml (falls back to AWS_REGION / AWS_DEFAULT_REGION)
-* feat(aws): add Parameter Store support (`param-key` / `param-path`) and `"*"` path bulk injection
+* feat(aws): add param-store support and fix bulk-loading ([525a3b5](https://github.com/mistweaverco/withsecrets/commit/525a3b5))
+* chore: add .svelte-kit dir to .gitignore ([62457eb](https://github.com/mistweaverco/withsecrets/commit/62457eb))
 
 ## 2.2.0 (2026-08-03)
 
-* chore(docs): update CHANGELOG.md ([c02fdc9](https://github.com/mistweaverco/withsecrets/commit/c02fdc9))
-* chore(docs): update CHANGELOG.md ([589c3fe](https://github.com/mistweaverco/withsecrets/commit/589c3fe))
-* feat(gui): add GUI support ([449aed4](https://github.com/mistweaverco/withsecrets/commit/449aed4))
+* chore(docs): update CHANGELOG.md ([baefe7b](https://github.com/mistweaverco/withsecrets/commit/baefe7b))
 * feat(gui): more colors + hide disabled buttons ([9827b2e](https://github.com/mistweaverco/withsecrets/commit/9827b2e))
+
+## 2.1.0 (2026-07-06)
+
 * fix(ci): build-gui ([4204a00](https://github.com/mistweaverco/withsecrets/commit/4204a00))
 * fix(ci): remove vp install from build-gui.sh ([d833ca2](https://github.com/mistweaverco/withsecrets/commit/d833ca2))
 * fix(ci): update lockfile ([c392f9c](https://github.com/mistweaverco/withsecrets/commit/c392f9c))
+* feat(gui): add GUI support ([449aed4](https://github.com/mistweaverco/withsecrets/commit/449aed4))
+* chore(docs): update CHANGELOG.md ([589c3fe](https://github.com/mistweaverco/withsecrets/commit/589c3fe))
 
 ## <small>2.0.2 (2026-07-01)</small>
 
