@@ -319,6 +319,119 @@ func TestValidateConfig(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "valid AWS param-key",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "aws",
+						Env: map[string]EnvItem{
+							"USERNAME": {ParamKey: "/local/withsecrets/config/USERNAME"},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid AWS param-path with star",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "aws",
+						Env: map[string]EnvItem{
+							"*": {ParamPath: "/local/withsecrets/config"},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid secret-path with star",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "aws",
+						Env: map[string]EnvItem{
+							"*": {SecretPath: "/local/withsecrets/config"},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "star with secret-key is invalid",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "aws",
+						Env: map[string]EnvItem{
+							"*": {SecretKey: "some-secret"},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "param-key rejected for non-aws provider",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "gcp",
+						Project:  "test-project",
+						Env: map[string]EnvItem{
+							"FOO": {ParamKey: "/path/to/param"},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "param-path rejected for non-aws provider",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "azure",
+						Env: map[string]EnvItem{
+							"FOO": {ParamPath: "/path/to/params"},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "cannot combine secret-key and param-key",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "aws",
+						Env: map[string]EnvItem{
+							"FOO": {SecretKey: "s", ParamKey: "p"},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "local provider rejects param-key",
+			config: &SecretsConfig{
+				Environments: map[string]Environment{
+					"default": {
+						Provider: "local",
+						Env: map[string]EnvItem{
+							"FOO": {ParamKey: "/param"},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

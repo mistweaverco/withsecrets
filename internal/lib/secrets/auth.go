@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
@@ -131,22 +132,41 @@ func TestAWSAuthorization(ctx context.Context, projectID string) (*Authorization
 		result.CredentialsInfo = "Found AWS credentials (using default region)"
 	}
 
-	// Step 2: Try listing secrets to verify access
-	secretNames, err := client.ListSecrets()
-	if err != nil {
+	// Step 2: Try listing Secrets Manager secrets and/or Parameter Store parameters
+	secretNames, secretsErr := client.ListSecrets()
+	paramNames, paramsErr := client.ListParameters()
+
+	if secretsErr != nil && paramsErr != nil {
 		result.HasPermissions = false
-		result.ErrorMessage = fmt.Sprintf("Authenticated, but could not list secrets (possibly lack permissions): %v", err)
+		result.ErrorMessage = fmt.Sprintf("Authenticated, but could not list Secrets Manager secrets (%v) or Parameter Store parameters (%v)", secretsErr, paramsErr)
 		return result, nil
 	}
 
-	// Success
 	result.HasPermissions = true
-	if len(secretNames) > 0 {
-		result.ExampleSecret = secretNames[0]
-		result.CredentialsInfo += fmt.Sprintf(" - Successfully authenticated! Example secret found: %s", secretNames[0])
+	var details []string
+	if secretsErr == nil {
+		if len(secretNames) > 0 {
+			result.ExampleSecret = secretNames[0]
+			details = append(details, fmt.Sprintf("Secrets Manager OK (example: %s)", secretNames[0]))
+		} else {
+			details = append(details, "Secrets Manager OK (no secrets found)")
+		}
 	} else {
-		result.CredentialsInfo += " - Successfully authenticated! (No secrets found, but access is working)"
+		details = append(details, fmt.Sprintf("Secrets Manager list failed: %v", secretsErr))
 	}
+	if paramsErr == nil {
+		if len(paramNames) > 0 {
+			if result.ExampleSecret == "" {
+				result.ExampleSecret = paramNames[0]
+			}
+			details = append(details, fmt.Sprintf("Parameter Store OK (example: %s)", paramNames[0]))
+		} else {
+			details = append(details, "Parameter Store OK (no parameters found)")
+		}
+	} else {
+		details = append(details, fmt.Sprintf("Parameter Store list failed: %v", paramsErr))
+	}
+	result.CredentialsInfo += " - Successfully authenticated! " + strings.Join(details, "; ")
 
 	return result, nil
 }

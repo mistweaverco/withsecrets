@@ -58,13 +58,8 @@ func (l *LocalManager) GetSecretsByPath(projectID, secretPath string) (map[strin
 
 			// Check if this environment variable starts with our path
 			if len(key) >= len(secretPath) && key[:len(secretPath)] == secretPath {
-				// Remove the path prefix from the key
-				secretName := key[len(secretPath):]
-				// Remove leading underscore if present
-				if len(secretName) > 0 && secretName[0] == '_' {
-					secretName = secretName[1:]
-				}
-				secrets[secretName] = value
+				envVarName := relativeEnvVarName(secretPath, key)
+				secrets[envVarName] = value
 			}
 		}
 	}

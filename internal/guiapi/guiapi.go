@@ -65,6 +65,10 @@ func ListSecrets(ctx context.Context, configPath, envName string) ([]SecretRow, 
 		if project == "" {
 			project = env.Project
 		}
+		region := it.Region
+		if region == "" {
+			region = env.Region
+		}
 
 		refKind := "value"
 		ref := ""
@@ -74,19 +78,66 @@ func ListSecrets(ctx context.Context, configPath, envName string) ([]SecretRow, 
 		} else if it.SecretPath != "" {
 			refKind = "secret-path"
 			ref = it.SecretPath
+		} else if it.ParamKey != "" {
+			refKind = "param-key"
+			ref = it.ParamKey
+		} else if it.ParamPath != "" {
+			refKind = "param-path"
+			ref = it.ParamPath
 		}
 
 		val := values[it.EnvironmentVariable]
 
-		rows = append(rows, SecretRow{
-			EnvVar:      it.EnvironmentVariable,
-			Value:       val,
-			MaskedValue: MaskValue(val),
-			RefKind:     refKind,
-			Ref:         ref,
-			Provider:    provider,
-			Project:     project,
-		})
+		// For "*" bulk path mappings, skip the parent "*" row and only surface expanded vars
+		if it.EnvironmentVariable != "*" {
+			rows = append(rows, SecretRow{
+				EnvVar:      it.EnvironmentVariable,
+				Value:       val,
+				MaskedValue: MaskValue(val),
+				RefKind:     refKind,
+				Ref:         ref,
+				Provider:    provider,
+				Project:     project,
+				Region:      region,
+			})
+		}
+
+		// For path / "*" bulk mappings, also surface expanded env vars
+		if it.SecretPath != "" || it.ParamPath != "" {
+			prefix := ""
+			if it.EnvironmentVariable != "*" {
+				prefix = it.EnvironmentVariable + "_"
+			}
+			for k, v := range values {
+				if it.EnvironmentVariable == "*" {
+					// Skip keys that are themselves configured mappings
+					if _, isMapped := env.Env[k]; isMapped {
+						continue
+					}
+					rows = append(rows, SecretRow{
+						EnvVar:      k,
+						Value:       v,
+						MaskedValue: MaskValue(v),
+						RefKind:     refKind,
+						Ref:         ref,
+						Provider:    provider,
+						Project:     project,
+						Region:      region,
+					})
+				} else if strings.HasPrefix(k, prefix) && k != it.EnvironmentVariable {
+					rows = append(rows, SecretRow{
+						EnvVar:      k,
+						Value:       v,
+						MaskedValue: MaskValue(v),
+						RefKind:     refKind,
+						Ref:         ref,
+						Provider:    provider,
+						Project:     project,
+						Region:      region,
+					})
+				}
+			}
+		}
 	}
 
 	sort.Slice(rows, func(i, j int) bool { return rows[i].EnvVar < rows[j].EnvVar })
@@ -125,7 +176,7 @@ func CreateSecret(ctx context.Context, in CreateInput) error {
 	}
 
 	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(ctx, env.Provider, env.Project)
+	sm, err := factory.CreateSecretManager(ctx, env.Provider, env.Project, env.Region)
 	if err != nil {
 		return err
 	}
@@ -165,7 +216,7 @@ func UpdateSecret(ctx context.Context, configPath, envName, envVar, newValue str
 	}
 
 	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(ctx, row.Provider, row.Project)
+	sm, err := factory.CreateSecretManager(ctx, row.Provider, row.Project, row.Region)
 	if err != nil {
 		return err
 	}
@@ -189,7 +240,7 @@ func DeleteSecret(ctx context.Context, configPath, envName, envVar string) error
 	}
 
 	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(ctx, row.Provider, row.Project)
+	sm, err := factory.CreateSecretManager(ctx, row.Provider, row.Project, row.Region)
 	if err != nil {
 		return err
 	}

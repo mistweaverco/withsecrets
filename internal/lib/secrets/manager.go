@@ -20,6 +20,14 @@ type SecretManager interface {
 	Close() error
 }
 
+// ParameterStore is an optional interface for providers that support AWS-style
+// Parameter Store (or equivalent) param-key / param-path mappings.
+type ParameterStore interface {
+	GetParameter(projectID, paramName string) (string, error)
+	GetParameters(projectID string, paramNames []string) (map[string]string, error)
+	GetParametersByPath(projectID, paramPath string) (map[string]string, error)
+}
+
 // SecretMutator is an optional interface implemented by providers that support
 // creating/updating/deleting secrets (used by interactive tooling like the TUI).
 type SecretMutator interface {
@@ -36,18 +44,24 @@ func NewSecretManagerFactory() *SecretManagerFactory {
 	return &SecretManagerFactory{}
 }
 
-// CreateSecretManager creates a secret manager for the specified provider
-func (f *SecretManagerFactory) CreateSecretManager(ctx context.Context, provider string, projectID string) (SecretManager, error) {
+// CreateSecretManager creates a secret manager for the specified provider.
+// region is used by AWS; when empty, AWS_REGION / AWS_DEFAULT_REGION are used.
+func (f *SecretManagerFactory) CreateSecretManager(ctx context.Context, provider string, projectID string, region string) (SecretManager, error) {
 	switch provider {
 	case "gcp":
 		// Check for GCP credentials
 		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 		return NewGCPSecretManager(ctx, credentialsFile, projectID)
 	case "aws":
-		// Check for AWS region and profile
-		region := os.Getenv("AWS_REGION")
+		resolvedRegion := region
+		if resolvedRegion == "" {
+			resolvedRegion = os.Getenv("AWS_REGION")
+		}
+		if resolvedRegion == "" {
+			resolvedRegion = os.Getenv("AWS_DEFAULT_REGION")
+		}
 		profile := os.Getenv("AWS_PROFILE")
-		return NewAWSSecretsManager(ctx, region, profile)
+		return NewAWSSecretsManager(ctx, resolvedRegion, profile)
 	case "azure":
 		// Check for Azure Key Vault configuration
 		vaultURL := os.Getenv("AZURE_KEY_VAULT_URL")
@@ -210,11 +224,17 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		logger.Debug("Not all secrets found in cache, fetching from providers", "cached_count", len(cachedSecrets))
 	}
 
-	// Group mappings by provider and project for secret-based mappings
-	providerGroups := make(map[string]map[string][]string)
+	// Group mappings by provider/project/region for secret-based mappings
+	providerGroups := make(map[fetchKey][]string)
 
-	// Group mappings by provider and project for path-based mappings
-	pathGroups := make(map[string]map[string]string)
+	// Group mappings by provider/project/region for path-based mappings
+	pathGroups := make(map[fetchKey]map[string]string)
+
+	// Group mappings by provider/project/region for parameter-based mappings
+	paramGroups := make(map[fetchKey][]string)
+
+	// Group mappings by provider/project/region for parameter path-based mappings
+	paramPathGroups := make(map[fetchKey]map[string]string)
 
 	// Get all env items (from map)
 	envItems := env.GetEnvItems()
@@ -222,7 +242,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 
 	// Process all env items to separate secret-based and value-based ones
 	for i, envItem := range envItems {
-		logger.Debug("Processing mapping", "index", i, "env_var", envItem.EnvironmentVariable, "has_secret_key", envItem.SecretKey != "", "has_secret_path", envItem.SecretPath != "", "has_value", envItem.Value != nil)
+		logger.Debug("Processing mapping", "index", i, "env_var", envItem.EnvironmentVariable, "has_secret_key", envItem.SecretKey != "", "has_secret_path", envItem.SecretPath != "", "has_param_key", envItem.ParamKey != "", "has_param_path", envItem.ParamPath != "", "has_value", envItem.Value != nil)
 
 		// Handle direct values first
 		if envItem.Value != nil {
@@ -230,115 +250,74 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 			continue // Skip secret processing for value-based mappings
 		}
 
+		key := resolveFetchKey(env, envItem)
+
 		// Process secret-based mappings (single key)
 		if envItem.SecretKey != "" {
-			provider := envItem.Provider
-			if provider == "" {
-				provider = env.Provider
-			}
-
-			project := envItem.Project
-			if project == "" {
-				project = env.Project
-			}
-
-			// For AWS, Azure, OpenBao, Bitwarden, and local, we use a default project key since they don't use projects in the same way as GCP
-			if (provider == "aws" || provider == "azure" || provider == "openbao" || provider == "bitwarden" || provider == "local") && project == "" {
-				project = "default"
-			}
-
-			logger.Debug("Adding secret-based mapping to provider group", "provider", provider, "project", project, "secret_key", envItem.SecretKey)
-
-			if providerGroups[provider] == nil {
-				providerGroups[provider] = make(map[string][]string)
-			}
-
-			providerGroups[provider][project] = append(providerGroups[provider][project], envItem.SecretKey)
+			logger.Debug("Adding secret-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "secret_key", envItem.SecretKey)
+			providerGroups[key] = append(providerGroups[key], envItem.SecretKey)
 		}
 
 		// Process path-based mappings
 		if envItem.SecretPath != "" {
-			provider := envItem.Provider
-			if provider == "" {
-				provider = env.Provider
+			logger.Debug("Adding path-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "secret_path", envItem.SecretPath)
+			if pathGroups[key] == nil {
+				pathGroups[key] = make(map[string]string)
 			}
+			pathGroups[key][envItem.EnvironmentVariable] = envItem.SecretPath
+		}
 
-			project := envItem.Project
-			if project == "" {
-				project = env.Project
+		// Process parameter-based mappings (single key)
+		if envItem.ParamKey != "" {
+			logger.Debug("Adding param-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "param_key", envItem.ParamKey)
+			paramGroups[key] = append(paramGroups[key], envItem.ParamKey)
+		}
+
+		// Process parameter path-based mappings
+		if envItem.ParamPath != "" {
+			logger.Debug("Adding param path-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "param_path", envItem.ParamPath)
+			if paramPathGroups[key] == nil {
+				paramPathGroups[key] = make(map[string]string)
 			}
-
-			// For AWS, Azure, OpenBao, Bitwarden, and local, we use a default project key since they don't use projects in the same way as GCP
-			if (provider == "aws" || provider == "azure" || provider == "openbao" || provider == "bitwarden" || provider == "local") && project == "" {
-				project = "default"
-			}
-
-			logger.Debug("Adding path-based mapping to provider group", "provider", provider, "project", project, "secret_path", envItem.SecretPath)
-
-			// Create a separate group for path-based lookups
-			pathKey := fmt.Sprintf("%s:%s", provider, project)
-			if pathGroups[pathKey] == nil {
-				pathGroups[pathKey] = make(map[string]string)
-			}
-			pathGroups[pathKey][envItem.EnvironmentVariable] = envItem.SecretPath
+			paramPathGroups[key][envItem.EnvironmentVariable] = envItem.ParamPath
 		}
 	}
 
-	logger.Debug("Provider groups created", "secret_providers", len(providerGroups), "path_providers", len(pathGroups))
+	logger.Debug("Provider groups created", "secret_providers", len(providerGroups), "path_providers", len(pathGroups), "param_providers", len(paramGroups), "param_path_providers", len(paramPathGroups))
 
 	// Fetch secrets from each provider
 	allSecrets := make(map[string]string)
 
-	for provider, projects := range providerGroups {
-		for project, secretIDs := range projects {
-			logger.Debug("Creating secret manager", "provider", provider, "project", project, "secret_count", len(secretIDs))
+	for key, secretIDs := range providerGroups {
+		logger.Debug("Creating secret manager", "provider", key.provider, "project", key.project, "region", key.region, "secret_count", len(secretIDs))
 
-			secretManager, err := f.CreateSecretManager(ctx, provider, project)
-			if err != nil {
-				logger.Debug("Failed to create secret manager", "provider", provider, "project", project, "error", err)
-				// Log warning but continue with other providers
-				fmt.Printf("Warning: failed to create secret manager for %s: %v\n", provider, err)
-				continue
-			}
-			defer secretManager.Close()
+		secretManager, err := f.CreateSecretManager(ctx, key.provider, key.project, key.region)
+		if err != nil {
+			logger.Debug("Failed to create secret manager", "provider", key.provider, "project", key.project, "region", key.region, "error", err)
+			fmt.Printf("Warning: failed to create secret manager for %s: %v\n", key.provider, err)
+			continue
+		}
+		defer secretManager.Close()
 
-			logger.Debug("Fetching secrets from provider", "provider", provider, "project", project, "secret_ids", secretIDs)
-			secrets, err := secretManager.GetSecrets(project, secretIDs)
-			if err != nil {
-				logger.Debug("Failed to get secrets from provider", "provider", provider, "project", project, "error", err)
-				// Log warning but continue with other providers
-				fmt.Printf("Warning: failed to get secrets from %s project %s: %v\n", provider, project, err)
-				continue
-			}
+		logger.Debug("Fetching secrets from provider", "provider", key.provider, "project", key.project, "region", key.region, "secret_ids", secretIDs)
+		secrets, err := secretManager.GetSecrets(key.project, secretIDs)
+		if err != nil {
+			logger.Debug("Failed to get secrets from provider", "provider", key.provider, "project", key.project, "region", key.region, "error", err)
+			fmt.Printf("Warning: failed to get secrets from %s project %s: %v\n", key.provider, key.project, err)
+			continue
+		}
 
-			logger.Debug("Successfully retrieved secrets from provider", "provider", provider, "project", project, "retrieved_count", len(secrets))
+		logger.Debug("Successfully retrieved secrets from provider", "provider", key.provider, "project", key.project, "region", key.region, "retrieved_count", len(secrets))
 
-			// Map secrets to environment variables
-			for _, envItem := range envItems {
-				if envItem.SecretKey != "" {
-					envItemProvider := envItem.Provider
-					if envItemProvider == "" {
-						envItemProvider = env.Provider
-					}
-
-					envItemProject := envItem.Project
-					if envItemProject == "" {
-						envItemProject = env.Project
-					}
-
-					// For AWS, Azure, OpenBao, Bitwarden, and local, we use a default project key since they don't use projects in the same way as GCP
-					if (envItemProvider == "aws" || envItemProvider == "azure" || envItemProvider == "openbao" || envItemProvider == "bitwarden" || envItemProvider == "local") && envItemProject == "" {
-						envItemProject = "default"
-					}
-
-					// Only process mappings that match the current provider and project
-					if envItemProvider == provider && envItemProject == project {
-						if secretValue, exists := secrets[envItem.SecretKey]; exists {
-							allSecrets[envItem.EnvironmentVariable] = secretValue
-							logger.Debug("Mapped secret to environment variable", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", provider, "project", project)
-						} else {
-							logger.Debug("Secret key not found in provider response", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", provider, "project", project)
-						}
+		for _, envItem := range envItems {
+			if envItem.SecretKey != "" {
+				itemKey := resolveFetchKey(env, envItem)
+				if itemKey == key {
+					if secretValue, exists := secrets[envItem.SecretKey]; exists {
+						allSecrets[envItem.EnvironmentVariable] = secretValue
+						logger.Debug("Mapped secret to environment variable", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", key.provider, "project", key.project, "region", key.region)
+					} else {
+						logger.Debug("Secret key not found in provider response", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", key.provider, "project", key.project, "region", key.region)
 					}
 				}
 			}
@@ -346,41 +325,82 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 	}
 
 	// Process path-based mappings
-	for pathKey, pathMappings := range pathGroups {
-		// Parse the path key to get provider and project
-		parts := strings.Split(pathKey, ":")
-		if len(parts) != 2 {
-			fmt.Printf("Warning: invalid path key format: %s\n", pathKey)
-			continue
-		}
-
-		provider := parts[0]
-		project := parts[1]
-
-		secretManager, err := f.CreateSecretManager(ctx, provider, project)
+	for key, pathMappings := range pathGroups {
+		secretManager, err := f.CreateSecretManager(ctx, key.provider, key.project, key.region)
 		if err != nil {
-			// Log warning but continue with other providers
-			fmt.Printf("Warning: failed to create secret manager for %s: %v\n", provider, err)
+			fmt.Printf("Warning: failed to create secret manager for %s: %v\n", key.provider, err)
 			continue
 		}
 		defer secretManager.Close()
 
-		// Process each path mapping
 		for envVar, secretPath := range pathMappings {
-			secrets, err := secretManager.GetSecretsByPath(project, secretPath)
+			secrets, err := secretManager.GetSecretsByPath(key.project, secretPath)
 			if err != nil {
-				// Log warning but continue with other paths
 				fmt.Printf("Warning: failed to get secrets from path '%s': %v\n", secretPath, err)
 				continue
 			}
 
-			// Add all secrets from this path to the result
-			// The environment variable name from the mapping is used as a prefix
-			for secretName, secretValue := range secrets {
-				// Create a unique environment variable name by combining the mapping's env var and the secret name
-				finalEnvVarName := envVar + "_" + secretName
-				allSecrets[finalEnvVarName] = secretValue
+			injectPathSecrets(allSecrets, envVar, secrets)
+		}
+	}
+
+	// Process parameter-based mappings
+	for key, paramNames := range paramGroups {
+		secretManager, err := f.CreateSecretManager(ctx, key.provider, key.project, key.region)
+		if err != nil {
+			fmt.Printf("Warning: failed to create secret manager for %s: %v\n", key.provider, err)
+			continue
+		}
+		defer secretManager.Close()
+
+		paramStore, ok := secretManager.(ParameterStore)
+		if !ok {
+			fmt.Printf("Warning: provider %s does not support Parameter Store mappings\n", key.provider)
+			continue
+		}
+
+		params, err := paramStore.GetParameters(key.project, paramNames)
+		if err != nil {
+			fmt.Printf("Warning: failed to get parameters from %s project %s: %v\n", key.provider, key.project, err)
+			continue
+		}
+
+		for _, envItem := range envItems {
+			if envItem.ParamKey != "" {
+				itemKey := resolveFetchKey(env, envItem)
+				if itemKey == key {
+					if paramValue, exists := params[envItem.ParamKey]; exists {
+						allSecrets[envItem.EnvironmentVariable] = paramValue
+						logger.Debug("Mapped parameter to environment variable", "env_var", envItem.EnvironmentVariable, "param_key", envItem.ParamKey, "provider", key.provider, "project", key.project, "region", key.region)
+					}
+				}
 			}
+		}
+	}
+
+	// Process parameter path-based mappings
+	for key, pathMappings := range paramPathGroups {
+		secretManager, err := f.CreateSecretManager(ctx, key.provider, key.project, key.region)
+		if err != nil {
+			fmt.Printf("Warning: failed to create secret manager for %s: %v\n", key.provider, err)
+			continue
+		}
+		defer secretManager.Close()
+
+		paramStore, ok := secretManager.(ParameterStore)
+		if !ok {
+			fmt.Printf("Warning: provider %s does not support Parameter Store path mappings\n", key.provider)
+			continue
+		}
+
+		for envVar, paramPath := range pathMappings {
+			params, err := paramStore.GetParametersByPath(key.project, paramPath)
+			if err != nil {
+				fmt.Printf("Warning: failed to get parameters from path '%s': %v\n", paramPath, err)
+				continue
+			}
+
+			injectPathSecrets(allSecrets, envVar, params)
 		}
 	}
 
@@ -417,7 +437,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		cachedCount := 0
 		for _, envItem := range envItems {
 			// Only cache secrets (not static values)
-			if envItem.Value == nil && (envItem.SecretKey != "" || envItem.SecretPath != "") {
+			if envItem.Value == nil && (envItem.SecretKey != "" || envItem.SecretPath != "" || envItem.ParamKey != "" || envItem.ParamPath != "") {
 				envVar := envItem.EnvironmentVariable
 				if value, exists := allSecrets[envVar]; exists {
 					if err := cacheManager.Set(configPath, envName, envVar, value, cacheTTL); err != nil {
@@ -437,4 +457,49 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 	}
 
 	return allSecrets, nil
+}
+
+// fetchKey identifies a provider client instance (provider + project + region).
+type fetchKey struct {
+	provider string
+	project  string
+	region   string
+}
+
+// resolveFetchKey returns the effective provider, project, and region for an env item.
+func resolveFetchKey(env *config.Environment, envItem config.EnvItem) fetchKey {
+	provider := envItem.Provider
+	if provider == "" {
+		provider = env.Provider
+	}
+
+	project := envItem.Project
+	if project == "" {
+		project = env.Project
+	}
+
+	region := envItem.Region
+	if region == "" {
+		region = env.Region
+	}
+
+	// For AWS, Azure, OpenBao, Bitwarden, and local, we use a default project key since they don't use projects in the same way as GCP
+	if (provider == "aws" || provider == "azure" || provider == "openbao" || provider == "bitwarden" || provider == "local") && project == "" {
+		project = "default"
+	}
+
+	return fetchKey{provider: provider, project: project, region: region}
+}
+
+// injectPathSecrets merges path-fetched secrets into allSecrets.
+// When envVar is "*", each secret name is used as the env var directly;
+// otherwise names are prefixed with envVar + "_".
+func injectPathSecrets(allSecrets map[string]string, envVar string, secrets map[string]string) {
+	for secretName, secretValue := range secrets {
+		if envVar == "*" {
+			allSecrets[secretName] = secretValue
+		} else {
+			allSecrets[envVar+"_"+secretName] = secretValue
+		}
+	}
 }

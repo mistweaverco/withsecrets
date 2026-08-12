@@ -487,7 +487,8 @@ which is particularly useful for:
 **How it works:**
 
 - When you specify a `secret-path`, withsecrets will fetch all secrets that start with that path
-- Each secret found will be converted to an environment variable using the pattern: `{ENVIRONMENT_VARIABLE}_{SECRET_NAME}`
+- Each secret found will be converted to an environment variable using the pattern: `{ENVIRONMENT_VARIABLE}_{RELATIVE_NAME}` (relative name = sanitized suffix after the path)
+- Use env key `"*"` with `secret-path` or `param-path` to inject relative names **without** a prefix
 - Secret names are automatically sanitized to be valid POSIX environment variable names (uppercase, underscores only)
 
 **Example with secret paths:**
@@ -769,9 +770,9 @@ withsecrets supports GCP Secret Manager for fetching secrets. To use GCP:
          value: "hard-coded-value"
    ```
 
-### AWS Secrets Manager (aws)
+### AWS Secrets Manager & Parameter Store (aws)
 
-withsecrets supports AWS Secrets Manager for fetching secrets. To use AWS:
+withsecrets supports AWS Secrets Manager and Systems Manager Parameter Store. To use AWS:
 
 1. **Authentication**: Set up authentication using one of these methods:
    - **Environment Variables**: Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`:
@@ -788,13 +789,18 @@ withsecrets supports AWS Secrets Manager for fetching secrets. To use AWS:
    - **IAM Roles**: If running on EC2, ECS, or other AWS services, use IAM roles
    - **AWS CLI**: Use `aws configure` to set up your credentials
 
-2. **IAM Permissions**: Ensure your AWS credentials have the `secretsmanager:GetSecretValue` permission for the secrets you want to access.
+2. **IAM Permissions**:
+   - Secrets Manager: `secretsmanager:GetSecretValue` (and `ListSecrets` for `secret-path`)
+   - Parameter Store: `ssm:GetParameter` / `ssm:GetParametersByPath` (plus `kms:Decrypt` for SecureString)
 
-3. **Example Configuration**:
+3. **Region**: Set optional `region` in `ws.yaml` (environment or per mapping). If unset, falls back to `AWS_REGION`, then `AWS_DEFAULT_REGION`, then the shared AWS config.
+
+4. **Example Configuration (Secrets Manager)**:
 
    ```yaml
    default:
      provider: aws
+     region: eu-west-3
      env:
        DATABASE_URL:
          secret-key: "database-connection-string"
@@ -803,6 +809,19 @@ withsecrets supports AWS Secrets Manager for fetching secrets. To use AWS:
        SOME_HARD_CODED_ENV:
          value: "hard-coded-value"
    ```
+
+5. **Parameter Store** uses `param-key` / `param-path`. With env key `"*"`, path suffixes become env vars with no prefix:
+
+   ```yaml
+   default:
+     provider: aws
+     region: eu-west-3
+     env:
+       "*":
+         param-path: /local/withsecrets/config
+   ```
+
+   Parameters `/local/withsecrets/config/USERNAME` and `/local/withsecrets/config/PASSWORD` inject as `USERNAME` and `PASSWORD`. The same `"*"` pattern works with `secret-path` on all providers.
 
 ### Azure Key Vault (azure)
 

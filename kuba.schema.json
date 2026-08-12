@@ -17,6 +17,10 @@
           "description": "The default cloud project for this environment. This can be a string or an integer.",
           "type": ["string", "integer"]
         },
+        "region": {
+          "description": "Optional cloud region for this environment (used by AWS). Falls back to AWS_REGION / AWS_DEFAULT_REGION when unset.",
+          "type": "string"
+        },
         "inherits": {
           "description": "One or more environment names to inherit variables from (in order).",
           "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
@@ -30,7 +34,7 @@
           ]
         },
         "env": {
-          "description": "Mapping of environment variable name to configuration object.",
+          "description": "Mapping of environment variable name to configuration object. Use \"*\" with secret-path or param-path to inject path suffixes as env vars without a prefix.",
           "type": "object",
           "patternProperties": {
             "^[A-Z0-9_]+$": {
@@ -38,12 +42,24 @@
               "properties": {
                 "secret-key": { "type": "string" },
                 "secret-path": { "type": "string" },
+                "param-key": {
+                  "type": "string",
+                  "description": "AWS Systems Manager Parameter Store parameter name/path (provider must be aws)."
+                },
+                "param-path": {
+                  "type": "string",
+                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws)."
+                },
                 "value": { "type": ["string", "integer"] },
                 "provider": {
                   "type": "string",
                   "enum": ["gcp", "azure", "aws", "openbao", "bitwarden", "local"]
                 },
-                "project": { "type": ["string", "integer"] }
+                "project": { "type": ["string", "integer"] },
+                "region": {
+                  "type": "string",
+                  "description": "Optional AWS region override for this mapping. Falls back to environment region, then AWS_REGION / AWS_DEFAULT_REGION."
+                }
               },
               "allOf": [
                 {
@@ -54,18 +70,47 @@
                   "then": {
                     "required": ["value"],
                     "not": {
-                      "anyOf": [{ "required": ["secret-key"] }, { "required": ["secret-path"] }]
+                      "anyOf": [
+                        { "required": ["secret-key"] },
+                        { "required": ["secret-path"] },
+                        { "required": ["param-key"] },
+                        { "required": ["param-path"] }
+                      ]
                     }
                   },
                   "else": {
                     "oneOf": [
                       { "required": ["secret-key"] },
                       { "required": ["secret-path"] },
+                      { "required": ["param-key"] },
+                      { "required": ["param-path"] },
                       { "required": ["value"] }
                     ]
                   }
                 }
               ],
+              "additionalProperties": false
+            },
+            "^\\*$": {
+              "type": "object",
+              "description": "Bulk path injection: inject each secret/parameter under the path as its own env var (suffix after the path, no prefix).",
+              "properties": {
+                "secret-path": { "type": "string" },
+                "param-path": {
+                  "type": "string",
+                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws)."
+                },
+                "provider": {
+                  "type": "string",
+                  "enum": ["gcp", "azure", "aws", "openbao", "bitwarden"]
+                },
+                "project": { "type": ["string", "integer"] },
+                "region": {
+                  "type": "string",
+                  "description": "Optional AWS region override for this mapping. Falls back to environment region, then AWS_REGION / AWS_DEFAULT_REGION."
+                }
+              },
+              "oneOf": [{ "required": ["secret-path"] }, { "required": ["param-path"] }],
               "additionalProperties": false
             }
           },
@@ -105,12 +150,41 @@
                           "not": {
                             "anyOf": [
                               { "required": ["secret-key"] },
-                              { "required": ["secret-path"] }
+                              { "required": ["secret-path"] },
+                              { "required": ["param-key"] },
+                              { "required": ["param-path"] }
                             ]
                           }
                         }
                       }
                     ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provider": {
+                "not": { "const": "aws" }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "env": {
+                "patternProperties": {
+                  "^[A-Z0-9_]+$": {
+                    "not": {
+                      "anyOf": [{ "required": ["param-key"] }, { "required": ["param-path"] }]
+                    }
+                  },
+                  "^\\*$": {
+                    "not": {
+                      "anyOf": [{ "required": ["param-path"] }]
+                    }
                   }
                 }
               }

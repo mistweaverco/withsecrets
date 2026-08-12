@@ -20,6 +20,7 @@ type SecretsConfig struct {
 type Environment struct {
 	Provider string             `yaml:"provider"`
 	Project  string             `yaml:"project"`
+	Region   string             `yaml:"region,omitempty"`
 	Env      map[string]EnvItem `yaml:"env"`
 	Inherits []string           `yaml:"inherits,omitempty"`
 	Cache    *cache.CacheConfig `yaml:"cache,omitempty"`
@@ -31,6 +32,7 @@ func (e *Environment) UnmarshalYAML(value *yaml.Node) error {
 	type rawEnv struct {
 		Provider string             `yaml:"provider"`
 		Project  string             `yaml:"project"`
+		Region   string             `yaml:"region,omitempty"`
 		Env      map[string]EnvItem `yaml:"env"`
 		Inherits interface{}        `yaml:"inherits,omitempty"`
 		Cache    interface{}        `yaml:"cache,omitempty"`
@@ -41,6 +43,7 @@ func (e *Environment) UnmarshalYAML(value *yaml.Node) error {
 	}
 	e.Provider = tmp.Provider
 	e.Project = tmp.Project
+	e.Region = tmp.Region
 	e.Env = tmp.Env
 
 	// Normalize inherits to []string
@@ -89,9 +92,12 @@ type EnvItem struct {
 	EnvironmentVariable string `yaml:"environment-variable,omitempty"`
 	SecretKey           string `yaml:"secret-key,omitempty"`
 	SecretPath          string `yaml:"secret-path,omitempty"`
+	ParamKey            string `yaml:"param-key,omitempty"`
+	ParamPath           string `yaml:"param-path,omitempty"`
 	Value               any    `yaml:"value,omitempty"`
 	Provider            string `yaml:"provider,omitempty"`
 	Project             string `yaml:"project,omitempty"`
+	Region              string `yaml:"region,omitempty"`
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling for EnvItem
@@ -101,18 +107,24 @@ func (e *EnvItem) UnmarshalYAML(value *yaml.Node) error {
 	var temp struct {
 		SecretKey  string `yaml:"secret-key,omitempty"`
 		SecretPath string `yaml:"secret-path,omitempty"`
+		ParamKey   string `yaml:"param-key,omitempty"`
+		ParamPath  string `yaml:"param-path,omitempty"`
 		Value      any    `yaml:"value,omitempty"`
 		Provider   string `yaml:"provider,omitempty"`
 		Project    string `yaml:"project,omitempty"`
+		Region     string `yaml:"region,omitempty"`
 	}
 	if err := value.Decode(&temp); err != nil {
 		return err
 	}
 	e.SecretKey = temp.SecretKey
 	e.SecretPath = temp.SecretPath
+	e.ParamKey = temp.ParamKey
+	e.ParamPath = temp.ParamPath
 	e.Value = temp.Value
 	e.Provider = temp.Provider
 	e.Project = temp.Project
+	e.Region = temp.Region
 	return nil
 }
 
@@ -315,6 +327,14 @@ func processValueInterpolations(config *SecretsConfig) error {
 			}
 		}
 
+		// Interpolate environment-level region field
+		if env.Region != "" && strings.Contains(env.Region, "${") {
+			interpolated := InterpolateEnvVars(env.Region, resolvedVars)
+			if interpolated != env.Region {
+				env.Region = interpolated
+			}
+		}
+
 		// Interpolate item-level fields that can be strings
 		for name, envItem := range env.Env {
 			// secret-key
@@ -325,9 +345,21 @@ func processValueInterpolations(config *SecretsConfig) error {
 			if envItem.SecretPath != "" && strings.Contains(envItem.SecretPath, "${") {
 				envItem.SecretPath = InterpolateEnvVars(envItem.SecretPath, resolvedVars)
 			}
+			// param-key
+			if envItem.ParamKey != "" && strings.Contains(envItem.ParamKey, "${") {
+				envItem.ParamKey = InterpolateEnvVars(envItem.ParamKey, resolvedVars)
+			}
+			// param-path
+			if envItem.ParamPath != "" && strings.Contains(envItem.ParamPath, "${") {
+				envItem.ParamPath = InterpolateEnvVars(envItem.ParamPath, resolvedVars)
+			}
 			// project (item-level)
 			if envItem.Project != "" && strings.Contains(envItem.Project, "${") {
 				envItem.Project = InterpolateEnvVars(envItem.Project, resolvedVars)
+			}
+			// region (item-level)
+			if envItem.Region != "" && strings.Contains(envItem.Region, "${") {
+				envItem.Region = InterpolateEnvVars(envItem.Region, resolvedVars)
 			}
 			env.Env[name] = envItem
 		}
@@ -516,12 +548,11 @@ func validateConfig(config *SecretsConfig) error {
 
 		// Validate env items
 		idx := 0
-		for _, envItem := range env.Env {
+		for envVarName, envItem := range env.Env {
 			idx++
 			// name is the environment variable
 
-			// Either secret-key, secret-path, or value must be provided (no bare items)
-			// Special case: for local provider (env-level or item-level), only value is allowed
+			// Exactly one of secret-key, secret-path, param-key, param-path, or value
 			secretFields := 0
 			if envItem.SecretKey != "" {
 				secretFields++
@@ -529,16 +560,29 @@ func validateConfig(config *SecretsConfig) error {
 			if envItem.SecretPath != "" {
 				secretFields++
 			}
+			if envItem.ParamKey != "" {
+				secretFields++
+			}
+			if envItem.ParamPath != "" {
+				secretFields++
+			}
 			if envItem.Value != nil {
 				secretFields++
 			}
 
 			if secretFields == 0 {
-				return fmt.Errorf("environment '%s': env item %d: either secret-key, secret-path, or value is required", envName, idx)
+				return fmt.Errorf("environment '%s': env item %d: either secret-key, secret-path, param-key, param-path, or value is required", envName, idx)
 			}
 
 			if secretFields > 1 {
-				return fmt.Errorf("environment '%s': env item %d: cannot specify multiple of secret-key, secret-path, or value", envName, idx)
+				return fmt.Errorf("environment '%s': env item %d: cannot specify multiple of secret-key, secret-path, param-key, param-path, or value", envName, idx)
+			}
+
+			// "*" is only valid with path-based bulk loading
+			if envVarName == "*" {
+				if envItem.SecretPath == "" && envItem.ParamPath == "" {
+					return fmt.Errorf("environment '%s': env item '*': must use secret-path or param-path", envName)
+				}
 			}
 
 			// Determine effective provider for this item
@@ -552,13 +596,18 @@ func validateConfig(config *SecretsConfig) error {
 				return fmt.Errorf("environment '%s': env item %d: invalid provider '%s'", envName, idx, envItem.Provider)
 			}
 
+			// param-key / param-path are AWS Parameter Store only
+			if (envItem.ParamKey != "" || envItem.ParamPath != "") && effectiveProvider != "aws" {
+				return fmt.Errorf("environment '%s': env item %d: param-key and param-path are only supported with provider 'aws'", envName, idx)
+			}
+
 			// Local provider rules: only value is allowed
 			if effectiveProvider == "local" {
 				if envItem.Value == nil {
 					return fmt.Errorf("environment '%s': env item %d: provider 'local' requires 'value'", envName, idx)
 				}
-				if envItem.SecretKey != "" || envItem.SecretPath != "" {
-					return fmt.Errorf("environment '%s': env item %d: provider 'local' does not support 'secret-key' or 'secret-path'", envName, idx)
+				if envItem.SecretKey != "" || envItem.SecretPath != "" || envItem.ParamKey != "" || envItem.ParamPath != "" {
+					return fmt.Errorf("environment '%s': env item %d: provider 'local' does not support 'secret-key', 'secret-path', 'param-key', or 'param-path'", envName, idx)
 				}
 			}
 		}

@@ -131,7 +131,7 @@ func GetCreateOptions(ctx context.Context, configPath, envName string) (*CreateO
 // GCPLocations returns supported GCP Secret Manager locations for a project.
 func GCPLocations(ctx context.Context, project string) ([]string, error) {
 	factory := secrets.NewSecretManagerFactory()
-	sm, err := factory.CreateSecretManager(ctx, "gcp", project)
+	sm, err := factory.CreateSecretManager(ctx, "gcp", project, "")
 	if err != nil {
 		return nil, err
 	}

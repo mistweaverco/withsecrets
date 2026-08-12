@@ -8,15 +8,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
-// AWSSecretsManager handles AWS Secrets Manager operations
+// AWSSecretsManager handles AWS Secrets Manager and Parameter Store operations
 type AWSSecretsManager struct {
-	client *secretsmanager.Client
-	ctx    context.Context
+	client    *secretsmanager.Client
+	ssmClient *ssm.Client
+	ctx       context.Context
 }
 
-// NewAWSSecretsManager creates a new AWS Secrets Manager client
+// NewAWSSecretsManager creates a new AWS Secrets Manager / Parameter Store client
 func NewAWSSecretsManager(ctx context.Context, region string, profile string) (*AWSSecretsManager, error) {
 	var cfg aws.Config
 	var err error
@@ -39,10 +41,12 @@ func NewAWSSecretsManager(ctx context.Context, region string, profile string) (*
 	}
 
 	client := secretsmanager.NewFromConfig(cfg)
+	ssmClient := ssm.NewFromConfig(cfg)
 
 	return &AWSSecretsManager{
-		client: client,
-		ctx:    ctx,
+		client:    client,
+		ssmClient: ssmClient,
+		ctx:       ctx,
 	}, nil
 }
 
@@ -115,13 +119,96 @@ func (a *AWSSecretsManager) GetSecretsByPath(projectID, secretPath string) (map[
 				continue
 			}
 
-			// Sanitize the secret name for use as an environment variable name
-			envVarName := sanitizeEnvVarName(secretName)
+			envVarName := relativeEnvVarName(secretPath, secretName)
 			secrets[envVarName] = secretValue
 		}
 	}
 
 	return secrets, nil
+}
+
+// GetParameter retrieves a parameter from AWS Systems Manager Parameter Store
+func (a *AWSSecretsManager) GetParameter(projectID, paramName string) (string, error) {
+	input := &ssm.GetParameterInput{
+		Name:           aws.String(paramName),
+		WithDecryption: aws.Bool(true),
+	}
+
+	result, err := a.ssmClient.GetParameter(a.ctx, input)
+	if err != nil {
+		return "", fmt.Errorf("failed to get parameter '%s': %w", paramName, err)
+	}
+
+	if result.Parameter == nil || result.Parameter.Value == nil {
+		return "", fmt.Errorf("parameter '%s' has no value", paramName)
+	}
+
+	return *result.Parameter.Value, nil
+}
+
+// GetParameters retrieves multiple parameters from AWS Systems Manager Parameter Store
+func (a *AWSSecretsManager) GetParameters(projectID string, paramNames []string) (map[string]string, error) {
+	params := make(map[string]string)
+
+	for _, paramName := range paramNames {
+		value, err := a.GetParameter(projectID, paramName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get parameter '%s': %w", paramName, err)
+		}
+		params[paramName] = value
+	}
+
+	return params, nil
+}
+
+// GetParametersByPath retrieves all parameters under the given path prefix
+func (a *AWSSecretsManager) GetParametersByPath(projectID, paramPath string) (map[string]string, error) {
+	params := make(map[string]string)
+
+	input := &ssm.GetParametersByPathInput{
+		Path:           aws.String(paramPath),
+		Recursive:      aws.Bool(true),
+		WithDecryption: aws.Bool(true),
+	}
+
+	paginator := ssm.NewGetParametersByPathPaginator(a.ssmClient, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(a.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list parameters under '%s': %w", paramPath, err)
+		}
+
+		for _, parameter := range page.Parameters {
+			if parameter.Name == nil || parameter.Value == nil {
+				continue
+			}
+			envVarName := relativeEnvVarName(paramPath, *parameter.Name)
+			params[envVarName] = *parameter.Value
+		}
+	}
+
+	return params, nil
+}
+
+// ListParameters lists available Parameter Store parameter names (AWS-specific method)
+func (a *AWSSecretsManager) ListParameters() ([]string, error) {
+	input := &ssm.DescribeParametersInput{}
+
+	var names []string
+	paginator := ssm.NewDescribeParametersPaginator(a.ssmClient, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(a.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list parameters: %w", err)
+		}
+		for _, parameter := range page.Parameters {
+			if parameter.Name != nil {
+				names = append(names, *parameter.Name)
+			}
+		}
+	}
+
+	return names, nil
 }
 
 // ListSecrets lists all available secrets (AWS-specific method)

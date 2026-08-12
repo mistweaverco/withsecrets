@@ -1,3 +1,8 @@
+## Unreleased
+
+* feat(aws): add optional `region` in ws.yaml (falls back to AWS_REGION / AWS_DEFAULT_REGION)
+* feat(aws): add Parameter Store support (`param-key` / `param-path`) and `"*"` path bulk injection
+
 ## 2.2.0 (2026-08-03)
 
 * chore(docs): update CHANGELOG.md ([c02fdc9](https://github.com/mistweaverco/withsecrets/commit/c02fdc9))

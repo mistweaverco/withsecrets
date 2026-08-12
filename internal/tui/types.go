@@ -31,8 +31,8 @@ type secretRow struct {
 	item     config.EnvItem
 	provider string
 	project  string
-	refKind  string // secret-key | secret-path | value
-	ref      string // secret-key or secret-path
+	refKind  string // secret-key | secret-path | param-key | param-path | value
+	ref      string // secret-key, secret-path, param-key, or param-path
 }
 
 // Messages emitted by async operations.

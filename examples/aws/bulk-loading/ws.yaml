@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://withsecrets.com/ws.schema.json
+---
+default:
+  provider: aws
+  project: 893579388884
+  region: eu-north-1
+  env:
+    "*":
+      param-path: /local/withsecrets/config

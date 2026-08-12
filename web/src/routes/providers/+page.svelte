@@ -276,7 +276,7 @@ export BITWARDEN_IDENTITY_URL="https://your-bitwarden.example.com/identity"`}
 
 			<section>
 				<ClickableHeadline level={2} id="aws" className="text-3xl font-bold mb-6"
-					>AWS Secrets Manager (aws)</ClickableHeadline
+					>AWS Secrets Manager &amp; Parameter Store (aws)</ClickableHeadline
 				>
 				<div class="space-y-6">
 					<div class="card bg-base-200">
@@ -323,7 +323,8 @@ export AWS_REGION="us-east-1"`}
 						<div class="card-body">
 							<h3 class="card-title">2. IAM Permissions</h3>
 							<p class="mb-4">
-								Ensure your AWS credentials have the <code>secretsmanager:GetSecretValue</code> permission:
+								For <strong>Secrets Manager</strong>, grant <code>secretsmanager:GetSecretValue</code>
+								(and <code>secretsmanager:ListSecrets</code> for <code>secret-path</code> bulk loading):
 							</p>
 							<CodeBlock
 								lang="json"
@@ -332,8 +333,43 @@ export AWS_REGION="us-east-1"`}
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": "secretsmanager:GetSecretValue",
-      "Resource": "arn:aws:secretsmanager:region:account:secret:secret-name-*"
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:ListSecrets"
+      ],
+      "Resource": "*"
+    }
+  ]
+}`}
+							/>
+							<p class="mb-4 mt-4">
+								For <strong>Parameter Store</strong>, grant <code>ssm:GetParameter</code> /
+								<code>ssm:GetParametersByPath</code> (and decryption if you use SecureString):
+							</p>
+							<CodeBlock
+								lang="json"
+								code={`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath",
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "ssm.*.amazonaws.com"
+        }
+      }
     }
   ]
 }`}
@@ -343,18 +379,49 @@ export AWS_REGION="us-east-1"`}
 
 					<div class="card bg-base-200">
 						<div class="card-body">
-							<h3 class="card-title">3. Configuration Example</h3>
+							<h3 class="card-title">3. Configuration Example (Secrets Manager)</h3>
 							<CodeBlock
 								lang="yaml"
 								meta="path=ws.yaml"
 								code={`default:
   provider: aws
+  region: eu-west-3
   env:
     DATABASE_URL:
       secret-key: "database-connection-string"
     API_KEY:
       secret-key: "external-api-key"`}
 							/>
+						</div>
+					</div>
+
+					<div class="card bg-base-200">
+						<div class="card-body">
+							<h3 class="card-title">4. Parameter Store (param-key / param-path)</h3>
+							<p class="mb-4">
+								Use <code>param-key</code> for a single parameter, or <code>param-path</code> to load
+								everything under a path. With env key <code>"*"</code>, each parameter name suffix is
+								injected as its own environment variable (no prefix):
+							</p>
+							<CodeBlock
+								lang="yaml"
+								meta="path=ws.yaml"
+								code={`default:
+  provider: aws
+  region: eu-west-3
+  env:
+    USERNAME:
+      param-key: /local/withsecrets/config/USERNAME
+    "*":
+      param-path: /local/withsecrets/config`}
+							/>
+							<p class="mt-4 text-sm">
+								If <code>/local/withsecrets/config/USERNAME</code> and
+								<code>/local/withsecrets/config/PASSWORD</code> exist, the <code>"*"</code> mapping
+								injects <code>USERNAME</code> and <code>PASSWORD</code>. Optional
+								<code>region</code> overrides <code>AWS_REGION</code> /
+								<code>AWS_DEFAULT_REGION</code>.
+							</p>
 						</div>
 					</div>
 				</div>

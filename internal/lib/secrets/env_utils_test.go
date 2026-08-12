@@ -69,3 +69,27 @@ func TestExtractSecretNameFromPath(t *testing.T) {
 		}
 	}
 }
+
+func TestRelativeEnvVarName(t *testing.T) {
+	tests := []struct {
+		basePath string
+		fullName string
+		expected string
+	}{
+		{"/local/withsecrets/config", "/local/withsecrets/config/USERNAME", "USERNAME"},
+		{"/local/withsecrets/config/", "/local/withsecrets/config/PASSWORD", "PASSWORD"},
+		{"/local/withsecrets/config", "/local/withsecrets/config/db/user", "DB_USER"},
+		{"database", "database-username", "USERNAME"},
+		{"database", "database_password", "PASSWORD"},
+		{"/app", "/app/api-key", "API_KEY"},
+		{"", "/foo/bar", "FOO_BAR"},
+		{"/other", "/local/config/USER", "USER"},
+	}
+
+	for _, test := range tests {
+		result := relativeEnvVarName(test.basePath, test.fullName)
+		if result != test.expected {
+			t.Errorf("relativeEnvVarName(%q, %q) = %q, want %q", test.basePath, test.fullName, result, test.expected)
+		}
+	}
+}

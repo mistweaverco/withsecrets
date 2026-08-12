@@ -12,10 +12,11 @@ type SecretRow struct {
 	EnvVar      string `json:"envVar"`
 	Value       string `json:"value"`
 	MaskedValue string `json:"maskedValue"`
-	RefKind     string `json:"refKind"` // secret-key | secret-path | value
+	RefKind     string `json:"refKind"` // secret-key | secret-path | param-key | param-path | value
 	Ref         string `json:"ref"`
 	Provider    string `json:"provider"`
 	Project     string `json:"project"`
+	Region      string `json:"region,omitempty"`
 }
 
 // CreateInput holds fields for creating a secret and ws.yaml mapping.

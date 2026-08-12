@@ -28,7 +28,7 @@ func TestNewBitwardenManager_WithEnv(t *testing.T) {
 	ctx := context.Background()
 
 	// Set fake env vars; the SDK may still fail to initialize (e.g. missing native libs),
-	// which is acceptable in this test – we just care that we don't panic.
+	// which is acceptable in this test - we just care that we don't panic.
 	os.Setenv("BITWARDEN_ORGANIZATION_ID", "test-org")
 	os.Setenv("BITWARDEN_ACCESS_TOKEN", "test-token")
 	defer os.Unsetenv("BITWARDEN_ORGANIZATION_ID")

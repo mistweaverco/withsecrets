@@ -654,6 +654,35 @@ development:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
+							<ClickableHeadline
+								level={3}
+								id="aws-parameter-store-bulk"
+								className="card-title">AWS Parameter Store bulk loading</ClickableHeadline
+							>
+							<p class="mb-4">
+								Load every parameter under a path as env vars with <code>"*"</code> and
+								<code>param-path</code>:
+							</p>
+							<CodeBlock
+								lang="yaml"
+								meta="path=ws.yaml"
+								code={`default:
+  provider: aws
+  env:
+    "*":
+      param-path: /local/withsecrets/config`}
+							/>
+							<p class="mt-4 text-sm">
+								Parameters <code>/local/withsecrets/config/USERNAME</code> and
+								<code>/local/withsecrets/config/PASSWORD</code> map to <code>USERNAME</code> and
+								<code>PASSWORD</code>. The same <code>"*"</code> pattern works with
+								<code>secret-path</code> for Secrets Manager (and other providers).
+							</p>
+						</div>
+					</div>
+
+					<div class="card bg-base-200">
+						<div class="card-body">
 							<ClickableHeadline level={3} id="cross-provider-configuration" className="card-title"
 								>Cross-Provider Configuration</ClickableHeadline
 							>

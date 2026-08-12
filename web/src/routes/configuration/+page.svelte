@@ -222,6 +222,16 @@ production:
 
 					<div class="card bg-base-200">
 						<div class="card-body">
+							<h3 class="card-title">Region</h3>
+							<p>
+								Optional <code>region</code> (environment or per env item). Used by AWS; when unset,
+								falls back to <code>AWS_REGION</code>, then <code>AWS_DEFAULT_REGION</code>.
+							</p>
+						</div>
+					</div>
+
+					<div class="card bg-base-200">
+						<div class="card-body">
 							<h3 class="card-title">Env</h3>
 							<p>
 								The <code>env</code> array defines how secrets are mapped to environment variables.
@@ -268,7 +278,54 @@ production:
 							/>
 							<p class="mt-4 text-sm">
 								This will create environment variables like <code>DB_CONNECTION_STRING</code>,
-								<code>DB_USERNAME</code>, <code>API_STRIPE_KEY</code>, etc.
+								<code>DB_USERNAME</code>, <code>API_STRIPE_KEY</code>, etc. (prefix + relative name after the path).
+							</p>
+						</div>
+					</div>
+
+					<div class="card bg-base-200">
+						<div class="card-body">
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-star-bulk" className="card-title" >Bulk inject with "*"</ClickableHeadline>
+							<p class="mb-4">
+								Use the literal env key <code>"*"</code> with <code>secret-path</code> or
+								<code>param-path</code> to inject each entry under the path as its own environment
+								variable (no prefix - just the sanitized path suffix):
+							</p>
+							<CodeBlock
+								lang="yaml"
+								meta="path=ws.yaml"
+								code={`env:
+  "*":
+    secret-path: /local/withsecrets/config`}
+							/>
+							<p class="mt-4 text-sm">
+								Secrets named <code>/local/withsecrets/config/USERNAME</code> and
+								<code>/local/withsecrets/config/PASSWORD</code> become <code>USERNAME</code> and
+								<code>PASSWORD</code>.
+							</p>
+						</div>
+					</div>
+
+					<div class="card bg-base-200">
+						<div class="card-body">
+							<ClickableHeadline level={3} id="withsecrets-yaml-env-param-store" className="card-title" >AWS Parameter Store (param-key / param-path)</ClickableHeadline>
+							<p class="mb-4">
+								When <code>provider</code> is <code>aws</code>, you can load from Systems Manager
+								Parameter Store instead of Secrets Manager:
+							</p>
+							<CodeBlock
+								lang="yaml"
+								meta="path=ws.yaml"
+								code={`env:
+  API_TOKEN:
+    param-key: /apps/myapp/API_TOKEN
+  "*":
+    param-path: /local/withsecrets/config`}
+							/>
+							<p class="mt-4 text-sm">
+								Exactly one of <code>secret-key</code>, <code>secret-path</code>,
+								<code>param-key</code>, <code>param-path</code>, or <code>value</code> is allowed per
+								env item. <code>param-*</code> is AWS-only.
 							</p>
 						</div>
 					</div>
