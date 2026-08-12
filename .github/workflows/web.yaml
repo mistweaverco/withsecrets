@@ -30,13 +30,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
-      - name: Get previous tag
+        with:
+          # Need full history + all tags so we can diff against the previous release tag
+          fetch-depth: 0
+
+      - name: Resolve previous release tag
+        id: prev_tag
         run: |
-          echo "PREVIOUS_GIT_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*' --abbrev=0 "$(git rev-list --tags='v[0-9]*.[0-9]*.[0-9]*' --max-count=2 | tail -n 1)")" >> $GITHUB_ENV
+          set -euo pipefail
+          CURRENT="${GITHUB_REF_NAME}"
+          # Newest version tags excluding the tag that triggered this run
+          PREV="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | grep -vxF "${CURRENT}" | head -n1 || true)"
+          echo "previous=${PREV}" >> "${GITHUB_OUTPUT}"
+          echo "Current tag: ${CURRENT}"
+          echo "Previous tag: ${PREV:-<none>}"
+
       - uses: dorny/paths-filter@v4.0.1
         id: changes
+        # Only diff when we have a previous tag to compare against
+        if: steps.prev_tag.outputs.previous != ''
         with:
-          base: ${{ env.PREVIOUS_GIT_TAG }}
+          base: ${{ steps.prev_tag.outputs.previous }}
+          ref: ${{ github.sha }}
           filters: |
             web:
               - '.github/workflows/web.yaml'
@@ -45,11 +60,27 @@ jobs:
               - 'ws-global.schema.json'
               - 'kuba.schema.json'
               - 'kuba-global.schema.json'
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+
+      - name: Decide whether to deploy
+        id: should_deploy
+        run: |
+          set -euo pipefail
+          # Deploy on: manual run, first release (no previous tag), or web/schema changes since previous tag
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" \
+             || -z "${{ steps.prev_tag.outputs.previous }}" \
+             || "${{ steps.changes.outputs.web }}" == "true" ]]; then
+            echo "deploy=true" >> "${GITHUB_OUTPUT}"
+            echo "Deploying website"
+          else
+            echo "deploy=false" >> "${GITHUB_OUTPUT}"
+            echo "Skipping deploy (no web/schema changes since ${{ steps.prev_tag.outputs.previous }})"
+          fi
+
+      - if: steps.should_deploy.outputs.deploy == 'true'
         uses: voidzero-dev/setup-vp@v1
         with:
           node-version: 24
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Cache Vite-Plus dependencies
         uses: actions/cache@v5.0.4
         with:
@@ -57,31 +88,31 @@ jobs:
           key: web-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             web-vite-plus-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Install dependencies
         run: vp install
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Add schema files to website
         run: |
           cp ws.schema.json web/static/ws.schema.json
           cp ws-global.schema.json web/static/ws-global.schema.json
           cp kuba.schema.json web/static/kuba.schema.json
           cp kuba-global.schema.json web/static/kuba-global.schema.json
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Install dependencies
         run: cd web && vp install
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Create Website
         run: cd web && vp run build
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Setup Pages
         uses: actions/configure-pages@v6.0.0
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Upload artifact
         uses: actions/upload-pages-artifact@v4.0.0
         with:
           path: "web/build"
-      - if: steps.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+      - if: steps.should_deploy.outputs.deploy == 'true'
         name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5.0.0
