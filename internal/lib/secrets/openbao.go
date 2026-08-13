@@ -134,8 +134,7 @@ func (o *OpenBaoManager) GetSecretsByPath(projectID, secretPath string) (map[str
 		}
 
 		// Sanitize the secret name for use as an environment variable name
-		envVarName := relativeEnvVarName(secretPath, secretName)
-		secrets[envVarName] = secretValue
+		secrets[secretName] = secretValue
 	}
 
 	return secrets, nil

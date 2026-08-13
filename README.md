@@ -487,6 +487,7 @@ which is particularly useful for:
 **How it works:**
 
 - When you specify a `secret-path`, withsecrets will fetch all secrets that start with that path
+- `secret-path` and `param-path` may be a string or an ordered list of strings; later paths overlay earlier ones when names collide
 - Each secret found will be converted to an environment variable using the pattern: `{ENVIRONMENT_VARIABLE}_{RELATIVE_NAME}` (relative name = sanitized suffix after the path)
 - Use env key `"*"` with `secret-path` or `param-path` to inject relative names **without** a prefix
 - Secret names are automatically sanitized to be valid POSIX environment variable names (uppercase, underscores only)
@@ -504,6 +505,10 @@ default:
       secret-path: "external-apis"
     SERVICE:
       secret-path: "microservices"
+    "*":
+      secret-path:
+        - /shared/config
+        - /overrides/config   # later wins on name collisions
     HARD_CODED:
       value: "static-value"
 ```
@@ -818,7 +823,9 @@ withsecrets supports AWS Secrets Manager and Systems Manager Parameter Store. To
      region: eu-west-3
      env:
        "*":
-         param-path: /local/withsecrets/config
+         param-path:
+           - /local/withsecrets/config
+           - /local/withsecrets/overrides   # later wins on name collisions
    ```
 
    Parameters `/local/withsecrets/config/USERNAME` and `/local/withsecrets/config/PASSWORD` inject as `USERNAME` and `PASSWORD`. The same `"*"` pattern works with `secret-path` on all providers.

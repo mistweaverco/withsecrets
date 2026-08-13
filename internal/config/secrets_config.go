@@ -89,15 +89,15 @@ func (e *Environment) UnmarshalYAML(value *yaml.Node) error {
 // It can be either a string (just the env var name) or a full mapping object
 type EnvItem struct {
 	// For string format: just the environment variable name
-	EnvironmentVariable string `yaml:"environment-variable,omitempty"`
-	SecretKey           string `yaml:"secret-key,omitempty"`
-	SecretPath          string `yaml:"secret-path,omitempty"`
-	ParamKey            string `yaml:"param-key,omitempty"`
-	ParamPath           string `yaml:"param-path,omitempty"`
-	Value               any    `yaml:"value,omitempty"`
-	Provider            string `yaml:"provider,omitempty"`
-	Project             string `yaml:"project,omitempty"`
-	Region              string `yaml:"region,omitempty"`
+	EnvironmentVariable string   `yaml:"environment-variable,omitempty"`
+	SecretKey           string   `yaml:"secret-key,omitempty"`
+	SecretPath          []string `yaml:"secret-path,omitempty"`
+	ParamKey            string   `yaml:"param-key,omitempty"`
+	ParamPath           []string `yaml:"param-path,omitempty"`
+	Value               any      `yaml:"value,omitempty"`
+	Provider            string   `yaml:"provider,omitempty"`
+	Project             string   `yaml:"project,omitempty"`
+	Region              string   `yaml:"region,omitempty"`
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling for EnvItem
@@ -106,9 +106,9 @@ func (e *EnvItem) UnmarshalYAML(value *yaml.Node) error {
 	// For map syntax, the env var name is the map key; object holds fields only
 	var temp struct {
 		SecretKey  string `yaml:"secret-key,omitempty"`
-		SecretPath string `yaml:"secret-path,omitempty"`
+		SecretPath any    `yaml:"secret-path,omitempty"`
 		ParamKey   string `yaml:"param-key,omitempty"`
-		ParamPath  string `yaml:"param-path,omitempty"`
+		ParamPath  any    `yaml:"param-path,omitempty"`
 		Value      any    `yaml:"value,omitempty"`
 		Provider   string `yaml:"provider,omitempty"`
 		Project    string `yaml:"project,omitempty"`
@@ -117,15 +117,80 @@ func (e *EnvItem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&temp); err != nil {
 		return err
 	}
+	secretPath, err := decodeStringOrList(temp.SecretPath)
+	if err != nil {
+		return fmt.Errorf("secret-path: %w", err)
+	}
+	paramPath, err := decodeStringOrList(temp.ParamPath)
+	if err != nil {
+		return fmt.Errorf("param-path: %w", err)
+	}
 	e.SecretKey = temp.SecretKey
-	e.SecretPath = temp.SecretPath
+	e.SecretPath = secretPath
 	e.ParamKey = temp.ParamKey
-	e.ParamPath = temp.ParamPath
+	e.ParamPath = paramPath
 	e.Value = temp.Value
 	e.Provider = temp.Provider
 	e.Project = temp.Project
 	e.Region = temp.Region
 	return nil
+}
+
+// decodeStringOrList normalizes a YAML string or list of strings into []string.
+// Empty strings are skipped; an empty result is treated as unset (nil).
+func decodeStringOrList(v any) ([]string, error) {
+	switch x := v.(type) {
+	case nil:
+		return nil, nil
+	case string:
+		if strings.TrimSpace(x) == "" {
+			return nil, nil
+		}
+		return []string{x}, nil
+	case []string:
+		out := make([]string, 0, len(x))
+		for _, s := range x {
+			if t := strings.TrimSpace(s); t != "" {
+				out = append(out, t)
+			}
+		}
+		if len(out) == 0 {
+			return nil, nil
+		}
+		return out, nil
+	case []any:
+		out := make([]string, 0, len(x))
+		for _, item := range x {
+			s, ok := item.(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid type in list: %T", item)
+			}
+			if t := strings.TrimSpace(s); t != "" {
+				out = append(out, t)
+			}
+		}
+		if len(out) == 0 {
+			return nil, nil
+		}
+		return out, nil
+	default:
+		return nil, fmt.Errorf("must be a string or list of strings, got %T", v)
+	}
+}
+
+func interpolatePaths(paths []string, resolvedVars map[string]string) []string {
+	if len(paths) == 0 {
+		return paths
+	}
+	out := make([]string, len(paths))
+	for i, p := range paths {
+		if strings.Contains(p, "${") {
+			out[i] = InterpolateEnvVars(p, resolvedVars)
+		} else {
+			out[i] = p
+		}
+	}
+	return out
 }
 
 // GetEnvItems returns all env items for an environment
@@ -342,16 +407,16 @@ func processValueInterpolations(config *SecretsConfig) error {
 				envItem.SecretKey = InterpolateEnvVars(envItem.SecretKey, resolvedVars)
 			}
 			// secret-path
-			if envItem.SecretPath != "" && strings.Contains(envItem.SecretPath, "${") {
-				envItem.SecretPath = InterpolateEnvVars(envItem.SecretPath, resolvedVars)
+			if len(envItem.SecretPath) > 0 {
+				envItem.SecretPath = interpolatePaths(envItem.SecretPath, resolvedVars)
 			}
 			// param-key
 			if envItem.ParamKey != "" && strings.Contains(envItem.ParamKey, "${") {
 				envItem.ParamKey = InterpolateEnvVars(envItem.ParamKey, resolvedVars)
 			}
 			// param-path
-			if envItem.ParamPath != "" && strings.Contains(envItem.ParamPath, "${") {
-				envItem.ParamPath = InterpolateEnvVars(envItem.ParamPath, resolvedVars)
+			if len(envItem.ParamPath) > 0 {
+				envItem.ParamPath = interpolatePaths(envItem.ParamPath, resolvedVars)
 			}
 			// project (item-level)
 			if envItem.Project != "" && strings.Contains(envItem.Project, "${") {
@@ -557,13 +622,13 @@ func validateConfig(config *SecretsConfig) error {
 			if envItem.SecretKey != "" {
 				secretFields++
 			}
-			if envItem.SecretPath != "" {
+			if len(envItem.SecretPath) > 0 {
 				secretFields++
 			}
 			if envItem.ParamKey != "" {
 				secretFields++
 			}
-			if envItem.ParamPath != "" {
+			if len(envItem.ParamPath) > 0 {
 				secretFields++
 			}
 			if envItem.Value != nil {
@@ -580,7 +645,7 @@ func validateConfig(config *SecretsConfig) error {
 
 			// "*" is only valid with path-based bulk loading
 			if envVarName == "*" {
-				if envItem.SecretPath == "" && envItem.ParamPath == "" {
+				if len(envItem.SecretPath) == 0 && len(envItem.ParamPath) == 0 {
 					return fmt.Errorf("environment '%s': env item '*': must use secret-path or param-path", envName)
 				}
 			}
@@ -597,7 +662,7 @@ func validateConfig(config *SecretsConfig) error {
 			}
 
 			// param-key / param-path are AWS Parameter Store only
-			if (envItem.ParamKey != "" || envItem.ParamPath != "") && effectiveProvider != "aws" {
+			if (envItem.ParamKey != "" || len(envItem.ParamPath) > 0) && effectiveProvider != "aws" {
 				return fmt.Errorf("environment '%s': env item %d: param-key and param-path are only supported with provider 'aws'", envName, idx)
 			}
 
@@ -606,7 +671,7 @@ func validateConfig(config *SecretsConfig) error {
 				if envItem.Value == nil {
 					return fmt.Errorf("environment '%s': env item %d: provider 'local' requires 'value'", envName, idx)
 				}
-				if envItem.SecretKey != "" || envItem.SecretPath != "" || envItem.ParamKey != "" || envItem.ParamPath != "" {
+				if envItem.SecretKey != "" || len(envItem.SecretPath) > 0 || envItem.ParamKey != "" || len(envItem.ParamPath) > 0 {
 					return fmt.Errorf("environment '%s': env item %d: provider 'local' does not support 'secret-key', 'secret-path', 'param-key', or 'param-path'", envName, idx)
 				}
 			}

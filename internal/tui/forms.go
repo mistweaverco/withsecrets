@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
+	"github.com/mistweaverco/withsecrets/internal/config"
 )
 
 func (m *Model) newEditForm() *huh.Form {
@@ -14,6 +15,27 @@ func (m *Model) newEditForm() *huh.Form {
 			huh.NewText().
 				Title("Secret value").
 				Value(&m.editValue),
+			huh.NewConfirm().
+				Title("Save changes?").
+				Affirmative("Save").
+				Negative("Cancel").
+				Value(&m.editSave),
+		),
+	).WithTheme(huh.ThemeFunc(themeVHSEra))
+}
+
+func (m *Model) newPathEditForm() *huh.Form {
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewText().
+				Title("Paths (one per line)").
+				Value(&m.editPaths).
+				Validate(func(s string) error {
+					if len(config.ParsePathLines(s)) == 0 {
+						return fmt.Errorf("at least one path is required")
+					}
+					return nil
+				}),
 			huh.NewConfirm().
 				Title("Save changes?").
 				Affirmative("Save").
@@ -60,29 +82,78 @@ func (m *Model) newErrorForm(title, text string) *huh.Form {
 }
 
 func (m *Model) newCreateForm() *huh.Form {
+	if m.createKind == "" {
+		m.createKind = "secret-key"
+	}
+
+	kindOpts := []huh.Option[string]{
+		huh.NewOption("secret-key", "secret-key"),
+		huh.NewOption("secret-path", "secret-path"),
+	}
+	if m.selectedEnv != nil && m.selectedEnv.Provider == "aws" {
+		kindOpts = append(kindOpts, huh.NewOption("param-path", "param-path"))
+	}
+
 	mainFields := []huh.Field{
+		huh.NewSelect[string]().
+			Title("Kind").
+			Options(kindOpts...).
+			Value(&m.createKind),
 		huh.NewInput().
 			Title("Env var").
-			Placeholder("ENV_VAR_NAME").
+			Placeholder("ENV_VAR_NAME or *").
 			Value(&m.createEnvVar).
 			Validate(func(s string) error {
 				if strings.TrimSpace(s) == "" {
 					return fmt.Errorf("env var is required")
 				}
+				if strings.TrimSpace(s) == "*" && m.createKind == "secret-key" {
+					return fmt.Errorf(`"*" is only valid with secret-path or param-path`)
+				}
 				return nil
 			}),
 		huh.NewInput().
-			Title("Secret key/id").
+			TitleFunc(func() string {
+				if isPathKind(m.createKind) {
+					return "Secret key/id (secret-key only)"
+				}
+				return "Secret key/id"
+			}, &m.createKind).
 			Placeholder("provider secret key/id/path").
 			Value(&m.createSecretKey).
 			Validate(func(s string) error {
+				if isPathKind(m.createKind) {
+					return nil
+				}
 				if strings.TrimSpace(s) == "" {
 					return fmt.Errorf("secret key/id is required")
 				}
 				return nil
 			}),
 		huh.NewText().
-			Title("Value").
+			TitleFunc(func() string {
+				if isPathKind(m.createKind) {
+					return "Paths (one per line)"
+				}
+				return "Paths (secret-path / param-path only)"
+			}, &m.createKind).
+			Value(&m.createPaths).
+			Validate(func(s string) error {
+				if !isPathKind(m.createKind) {
+					return nil
+				}
+				if len(config.ParsePathLines(s)) == 0 {
+					return fmt.Errorf("at least one path is required")
+				}
+				return nil
+			}),
+		huh.NewText().
+			TitleFunc(func() string {
+				if isPathKind(m.createKind) {
+					return "Value (secret-key only)"
+				}
+				return "Value"
+			}, &m.createKind).
 			Value(&m.createValue),
 		huh.NewInput().
 			Title("Description (optional)").
@@ -118,6 +189,9 @@ func (m *Model) newCreateForm() *huh.Form {
 				}, &m.createReplication).
 				Value(&m.createLocations).
 				Validate(func(v []string) error {
+					if isPathKind(m.createKind) {
+						return nil
+					}
 					if m.createReplication == "user-managed" && len(v) == 0 {
 						return fmt.Errorf("select at least one location")
 					}
@@ -134,22 +208,31 @@ func (m *Model) newCreateForm() *huh.Form {
 		envVar := strings.TrimSpace(m.createEnvVar)
 		secretKey := strings.TrimSpace(m.createSecretKey)
 		desc := strings.TrimSpace(m.createDesc)
+		kind := m.createKind
+		if kind == "" {
+			kind = "secret-key"
+		}
 
 		var b strings.Builder
 		b.WriteString(fmt.Sprintf("Environment: %s\n", mdEscape(m.selectedEnvName)))
 		b.WriteString(fmt.Sprintf("Provider: %s\n", mdEscape(m.selectedEnv.Provider)))
 		b.WriteString(fmt.Sprintf("Project: %s\n", mdEscape(m.selectedEnv.Project)))
+		b.WriteString(fmt.Sprintf("Kind: %s\n", mdEscape(kind)))
 		if envVar != "" {
 			b.WriteString(fmt.Sprintf("Env var: %s\n", mdEscape(envVar)))
 		}
-		if secretKey != "" {
+		if isPathKind(kind) {
+			for _, p := range config.ParsePathLines(m.createPaths) {
+				b.WriteString("  - " + mdEscape(p) + "\n")
+			}
+		} else if secretKey != "" {
 			b.WriteString(fmt.Sprintf("Secret key/id: %s\n", mdEscape(secretKey)))
 		}
-		if desc != "" {
+		if desc != "" && !isPathKind(kind) {
 			b.WriteString(fmt.Sprintf("Description: %s\n", mdEscape(desc)))
 		}
 
-		if m.selectedEnv.Provider == "gcp" {
+		if m.selectedEnv.Provider == "gcp" && !isPathKind(kind) {
 			b.WriteString("Replication: ")
 			if m.createReplication == "user-managed" {
 				b.WriteString("User-managed\n")
@@ -179,7 +262,7 @@ func (m *Model) newCreateForm() *huh.Form {
 		huh.NewSelect[string]().
 			Title("Action").
 			Options(
-				huh.NewOption("Create secret & mapping", "create"),
+				huh.NewOption("Create mapping", "create"),
 				huh.NewOption("Cancel", "cancel"),
 			).
 			Value(&m.createAction),

@@ -37,6 +37,9 @@ func (m *Model) updateBusy(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			// Return to edit
 			m.editForm = m.newEditForm()
+			if m.editIsPath {
+				m.editForm = m.newPathEditForm()
+			}
 			m.screen = screenEdit
 			return m.openError(screenEdit, "Save failed", msg.err.Error())
 		}

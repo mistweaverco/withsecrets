@@ -41,14 +41,17 @@
               "type": "object",
               "properties": {
                 "secret-key": { "type": "string" },
-                "secret-path": { "type": "string" },
+                "secret-path": {
+                  "description": "Secret path prefix for bulk loading. A string or an ordered list of strings; later paths overlay earlier ones on name collisions.",
+                  "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1 }]
+                },
                 "param-key": {
                   "type": "string",
                   "description": "AWS Systems Manager Parameter Store parameter name/path (provider must be aws)."
                 },
                 "param-path": {
-                  "type": "string",
-                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws)."
+                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws). A string or an ordered list of strings; later paths overlay earlier ones on name collisions.",
+                  "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1 }]
                 },
                 "value": { "type": ["string", "integer"] },
                 "provider": {
@@ -95,10 +98,13 @@
               "type": "object",
               "description": "Bulk path injection: inject each secret/parameter under the path as its own env var (suffix after the path, no prefix).",
               "properties": {
-                "secret-path": { "type": "string" },
+                "secret-path": {
+                  "description": "Secret path prefix for bulk loading. A string or an ordered list of strings; later paths overlay earlier ones on name collisions.",
+                  "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1 }]
+                },
                 "param-path": {
-                  "type": "string",
-                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws)."
+                  "description": "AWS Systems Manager Parameter Store path prefix for bulk loading (provider must be aws). A string or an ordered list of strings; later paths overlay earlier ones on name collisions.",
+                  "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1 }]
                 },
                 "provider": {
                   "type": "string",

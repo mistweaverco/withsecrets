@@ -6,4 +6,6 @@ default:
   region: eu-north-1
   env:
     "*":
-      param-path: /local/withsecrets/config
+      param-path:
+        - /local/withsecrets/config
+        - /local/withsecrets/terraform

@@ -6,6 +6,20 @@ import (
 	"github.com/mistweaverco/withsecrets/internal/config"
 )
 
+func isPathKind(kind string) bool {
+	return kind == "secret-path" || kind == "param-path"
+}
+
+func canMutateRow(r secretRow) bool {
+	if r.refKind == "value" {
+		return false
+	}
+	if r.refKind == "secret-key" || r.refKind == "param-key" {
+		return r.isMapping
+	}
+	return isPathKind(r.refKind)
+}
+
 type Screen int
 
 const (
@@ -26,13 +40,16 @@ func (e envItem) Description() string { return "" }
 func (e envItem) FilterValue() string { return e.name }
 
 type secretRow struct {
-	envVar   string
-	value    string
-	item     config.EnvItem
-	provider string
-	project  string
-	refKind  string // secret-key | secret-path | param-key | param-path | value
-	ref      string // secret-key, secret-path, param-key, or param-path
+	envVar      string
+	value       string
+	item        config.EnvItem
+	provider    string
+	project     string
+	refKind     string // secret-key | secret-path | param-key | param-path | value
+	ref         string // secret-key, secret-path, param-key, or param-path
+	paths       []string
+	providerKey string
+	isMapping   bool
 }
 
 // Messages emitted by async operations.

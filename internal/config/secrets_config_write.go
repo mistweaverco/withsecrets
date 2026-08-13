@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -49,6 +50,83 @@ func AddOrUpdateEnvSecretKeyMapping(configPath, envName, envVar, secretKey strin
 		setMapKey(envMap, envVar, valueNode)
 		return nil
 	})
+}
+
+// AddOrUpdateEnvPathMapping adds/updates a secret-path or param-path mapping in ws.yaml.
+// A single path is written as a scalar; multiple paths are written as a sequence.
+func AddOrUpdateEnvPathMapping(configPath, envName, envVar, kind string, paths []string) error {
+	if configPath == "" {
+		return fmt.Errorf("configPath is required")
+	}
+	if envName == "" {
+		envName = "default"
+	}
+	if envVar == "" {
+		return fmt.Errorf("envVar is required")
+	}
+	if kind != "secret-path" && kind != "param-path" {
+		return fmt.Errorf("kind must be secret-path or param-path")
+	}
+	cleaned := NormalizePaths(paths)
+	if len(cleaned) == 0 {
+		return fmt.Errorf("at least one path is required")
+	}
+
+	return editSecretsYAML(configPath, func(root *yaml.Node) error {
+		envNode, err := ensureMapKeyMap(root, envName)
+		if err != nil {
+			return err
+		}
+		envMap, err := ensureMapKeyMap(envNode, "env")
+		if err != nil {
+			return err
+		}
+
+		valueNode := &yaml.Node{
+			Kind: yaml.MappingNode,
+			Tag:  "!!map",
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Tag: "!!str", Value: kind},
+				PathValueNode(cleaned),
+			},
+		}
+		setMapKey(envMap, envVar, valueNode)
+		return nil
+	})
+}
+
+// NormalizePaths trims entries and drops empty strings.
+func NormalizePaths(paths []string) []string {
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// ParsePathLines splits a textarea (one path per line) into cleaned paths.
+func ParsePathLines(s string) []string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	return NormalizePaths(strings.Split(s, "\n"))
+}
+
+// PathValueNode writes a scalar when there is one path, otherwise a sequence.
+func PathValueNode(paths []string) *yaml.Node {
+	if len(paths) == 1 {
+		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: paths[0]}
+	}
+	n := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq"}
+	for _, p := range paths {
+		n.Content = append(n.Content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: p})
+	}
+	return n
+}
+
+// FormatPathRef joins paths for display.
+func FormatPathRef(paths []string) string {
+	return strings.Join(paths, ", ")
 }
 
 // RemoveEnvMapping removes a single env mapping (by env var name) from the given
@@ -217,13 +295,18 @@ func setMapKey(mapNode *yaml.Node, key string, value *yaml.Node) {
 		k := mapNode.Content[i]
 		if k.Kind == yaml.ScalarNode && k.Value == key {
 			mapNode.Content[i+1] = value
+			if key == "*" {
+				k.Tag = "!!str"
+				k.Style = yaml.DoubleQuotedStyle
+			}
 			return
 		}
 	}
-	mapNode.Content = append(mapNode.Content,
-		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
-		value,
-	)
+	keyNode := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}
+	if key == "*" {
+		keyNode.Style = yaml.DoubleQuotedStyle
+	}
+	mapNode.Content = append(mapNode.Content, keyNode, value)
 }
 
 func deleteMapKey(mapNode *yaml.Node, key string) {

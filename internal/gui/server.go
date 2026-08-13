@@ -158,7 +158,9 @@ func registerAPIRoutes(mux *http.ServeMux, configPath string, auth *guiAuth) {
 		env := r.PathValue("env")
 		var body struct {
 			EnvVar      string   `json:"envVar"`
+			Kind        string   `json:"kind"`
 			SecretKey   string   `json:"secretKey"`
+			Paths       []string `json:"paths"`
 			Value       string   `json:"value"`
 			Description string   `json:"description"`
 			Replication string   `json:"replication"`
@@ -172,7 +174,9 @@ func registerAPIRoutes(mux *http.ServeMux, configPath string, auth *guiAuth) {
 			ConfigPath:  configPath,
 			EnvName:     env,
 			EnvVar:      body.EnvVar,
+			Kind:        body.Kind,
 			SecretKey:   body.SecretKey,
+			Paths:       body.Paths,
 			Value:       body.Value,
 			Description: body.Description,
 			Replication: body.Replication,
@@ -189,13 +193,20 @@ func registerAPIRoutes(mux *http.ServeMux, configPath string, auth *guiAuth) {
 		env := r.PathValue("env")
 		envVar := r.PathValue("var")
 		var body struct {
-			Value string `json:"value"`
+			Value string   `json:"value"`
+			Paths []string `json:"paths"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			writeError(w, http.StatusBadRequest, err)
 			return
 		}
-		if err := guiapi.UpdateSecret(r.Context(), configPath, env, envVar, body.Value); err != nil {
+		var err error
+		if body.Paths != nil {
+			err = guiapi.UpdatePathMapping(r.Context(), configPath, env, envVar, body.Paths)
+		} else {
+			err = guiapi.UpdateSecret(r.Context(), configPath, env, envVar, body.Value)
+		}
+		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}

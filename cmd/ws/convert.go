@@ -753,7 +753,7 @@ func cleanupEmptyValues(env *config.Environment) {
 		}
 
 		// Check secret-path
-		if item.SecretPath != "" {
+		if len(item.SecretPath) > 0 {
 			hasContent = true
 		}
 
@@ -916,10 +916,10 @@ func updateEnvironmentInNode(rootNode *yaml.Node, envName string, env config.Env
 		}
 
 		// Add secret-path if present
-		if item.SecretPath != "" {
+		if len(item.SecretPath) > 0 {
 			itemNode.Content = append(itemNode.Content,
 				&yaml.Node{Kind: yaml.ScalarNode, Value: "secret-path"},
-				&yaml.Node{Kind: yaml.ScalarNode, Value: item.SecretPath},
+				config.PathValueNode(item.SecretPath),
 			)
 			hasContent = true
 		}

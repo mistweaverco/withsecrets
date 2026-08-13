@@ -125,7 +125,7 @@ func runShowCommand(patterns []string, listEnvironments bool) error {
 	// Get secrets for the environment
 	ctx := context.Background()
 	logger.Debug("Fetching secrets from cloud providers")
-	secrets, err := factory.GetSecretsForEnvironmentWithCache(ctx, env, showConfigFile, showEnvironment)
+	secrets, _, err := factory.GetSecretsForEnvironmentWithCache(ctx, env, showConfigFile, showEnvironment)
 	if err != nil {
 		return fmt.Errorf("failed to get secrets: %w", err)
 	}

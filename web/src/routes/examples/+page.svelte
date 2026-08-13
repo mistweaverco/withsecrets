@@ -670,13 +670,16 @@ development:
   provider: aws
   env:
     "*":
-      param-path: /local/withsecrets/config`}
+      param-path:
+        - /local/withsecrets/config
+        - /local/withsecrets/overrides`}
 							/>
 							<p class="mt-4 text-sm">
 								Parameters <code>/local/withsecrets/config/USERNAME</code> and
 								<code>/local/withsecrets/config/PASSWORD</code> map to <code>USERNAME</code> and
-								<code>PASSWORD</code>. The same <code>"*"</code> pattern works with
-								<code>secret-path</code> for Secrets Manager (and other providers).
+								<code>PASSWORD</code>. Later paths overlay earlier ones on name collisions. The same
+								<code>"*"</code> pattern works with <code>secret-path</code> for Secrets Manager
+								(and other providers).
 							</p>
 						</div>
 					</div>

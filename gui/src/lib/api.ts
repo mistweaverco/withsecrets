@@ -10,8 +10,11 @@ export type SecretRow = {
   maskedValue: string;
   refKind: string;
   ref: string;
+  paths?: string[];
+  providerKey?: string;
   provider: string;
   project: string;
+  isMapping?: boolean;
 };
 
 export type CreateOptions = {
@@ -118,8 +121,10 @@ export async function createSecret(
   env: string,
   body: {
     envVar: string;
-    secretKey: string;
-    value: string;
+    kind?: string;
+    secretKey?: string;
+    paths?: string[];
+    value?: string;
     description?: string;
     replication?: string;
     locations?: string[];
@@ -131,12 +136,16 @@ export async function createSecret(
   });
 }
 
-export async function updateSecret(env: string, envVar: string, value: string): Promise<void> {
+export async function updateSecret(
+  env: string,
+  envVar: string,
+  body: { value?: string; paths?: string[] },
+): Promise<void> {
   await request(
     `/api/environments/${encodeURIComponent(env)}/secrets/${encodeURIComponent(envVar)}`,
     {
       method: "PUT",
-      body: JSON.stringify({ value }),
+      body: JSON.stringify(body),
     },
   );
 }

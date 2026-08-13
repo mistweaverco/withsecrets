@@ -126,8 +126,7 @@ func (g *GCPSecretManager) GetSecretsByPath(projectID, secretPath string) (map[s
 			}
 
 			// Sanitize the secret ID for use as an environment variable name
-			envVarName := relativeEnvVarName(secretPath, secretID)
-			secrets[envVarName] = secretValue
+			secrets[secretID] = secretValue
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mistweaverco/withsecrets/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -71,14 +72,14 @@ func TestUpdateSecretRejectsNonSecretKey(t *testing.T) {
 	path := writeTestConfig(t)
 	err := UpdateSecret(t.Context(), path, "default", "TEST_VAR", "new")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "secret-key")
+	require.Contains(t, err.Error(), "value")
 }
 
 func TestDeleteSecretRejectsNonSecretKey(t *testing.T) {
 	path := writeTestConfig(t)
-	err := DeleteSecret(t.Context(), path, "staging", "AWS_VAR")
+	err := DeleteSecret(t.Context(), path, "default", "TEST_VAR")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "secret-key")
+	require.Contains(t, err.Error(), "value")
 }
 
 func TestCreateSecretRequiresFields(t *testing.T) {
@@ -89,4 +90,53 @@ func TestCreateSecretRequiresFields(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "required")
+}
+
+func TestPathMappingCRUD(t *testing.T) {
+	path := writeTestConfig(t)
+
+	err := CreateSecret(t.Context(), CreateInput{
+		ConfigPath: path,
+		EnvName:    "staging",
+		EnvVar:     "*",
+		Kind:       "param-path",
+		Paths:      []string{"/a", "/b"},
+	})
+	require.NoError(t, err)
+
+	cfg, err := config.LoadSecretsConfig(path)
+	require.NoError(t, err)
+	require.Equal(t, []string{"/a", "/b"}, cfg.Environments["staging"].Env["*"].ParamPath)
+
+	err = UpdatePathMapping(t.Context(), path, "staging", "*", []string{"/c"})
+	require.NoError(t, err)
+	cfg, err = config.LoadSecretsConfig(path)
+	require.NoError(t, err)
+	require.Equal(t, []string{"/c"}, cfg.Environments["staging"].Env["*"].ParamPath)
+
+	err = DeleteSecret(t.Context(), path, "staging", "*")
+	require.NoError(t, err)
+	cfg, err = config.LoadSecretsConfig(path)
+	require.NoError(t, err)
+	_, exists := cfg.Environments["staging"].Env["*"]
+	require.False(t, exists)
+}
+
+func TestCreatePathMappingRejectsEmpty(t *testing.T) {
+	path := writeTestConfig(t)
+	err := CreateSecret(t.Context(), CreateInput{
+		ConfigPath: path,
+		EnvName:    "staging",
+		EnvVar:     "DB",
+		Kind:       "secret-path",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "path")
+}
+
+func TestUpdatePathMappingRejectsSecretKey(t *testing.T) {
+	path := writeTestConfig(t)
+	err := UpdatePathMapping(t.Context(), path, "default", "SECRET_VAR", []string{"/a"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "secret-path")
 }

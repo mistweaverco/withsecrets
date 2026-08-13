@@ -58,8 +58,7 @@ func (l *LocalManager) GetSecretsByPath(projectID, secretPath string) (map[strin
 
 			// Check if this environment variable starts with our path
 			if len(key) >= len(secretPath) && key[:len(secretPath)] == secretPath {
-				envVarName := relativeEnvVarName(secretPath, key)
-				secrets[envVarName] = value
+				secrets[key] = value
 			}
 		}
 	}

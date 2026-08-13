@@ -9,14 +9,17 @@ type EnvironmentSummary struct {
 
 // SecretRow is a single secret mapping with resolved plain and masked values.
 type SecretRow struct {
-	EnvVar      string `json:"envVar"`
-	Value       string `json:"value"`
-	MaskedValue string `json:"maskedValue"`
-	RefKind     string `json:"refKind"` // secret-key | secret-path | param-key | param-path | value
-	Ref         string `json:"ref"`
-	Provider    string `json:"provider"`
-	Project     string `json:"project"`
-	Region      string `json:"region,omitempty"`
+	EnvVar      string   `json:"envVar"`
+	Value       string   `json:"value"`
+	MaskedValue string   `json:"maskedValue"`
+	RefKind     string   `json:"refKind"` // secret-key | secret-path | param-key | param-path | value
+	Ref         string   `json:"ref"`
+	Paths       []string `json:"paths,omitempty"`
+	ProviderKey string   `json:"providerKey,omitempty"`
+	Provider    string   `json:"provider"`
+	Project     string   `json:"project"`
+	Region      string   `json:"region,omitempty"`
+	IsMapping   bool     `json:"isMapping"`
 }
 
 // CreateInput holds fields for creating a secret and ws.yaml mapping.
@@ -24,7 +27,9 @@ type CreateInput struct {
 	ConfigPath  string
 	EnvName     string
 	EnvVar      string
+	Kind        string // secret-key | secret-path | param-path; default secret-key
 	SecretKey   string
+	Paths       []string
 	Value       string
 	Description string
 	Replication string   // "global" | "user-managed"

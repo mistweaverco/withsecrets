@@ -122,8 +122,7 @@ func (a *AzureKeyVaultManager) GetSecretsByPath(projectID, secretPath string) (m
 			}
 
 			// Sanitize the secret name for use as an environment variable name
-			envVarName := relativeEnvVarName(secretPath, secretName)
-			secrets[envVarName] = secretValue
+			secrets[secretName] = secretValue
 		}
 	}
 

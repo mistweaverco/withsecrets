@@ -46,11 +46,15 @@ type Model struct {
 	editTarget *secretRow
 	editForm   *huh.Form
 	editValue  string
+	editPaths  string
 	editSave   bool
+	editIsPath bool
 
 	createForm        *huh.Form
+	createKind        string // secret-key | secret-path | param-path
 	createEnvVar      string
 	createSecretKey   string
+	createPaths       string
 	createValue       string
 	createDesc        string
 	createReplication string // "global" | "user-managed"
@@ -281,13 +285,16 @@ func (m *Model) reloadSecrets() error {
 	rows := make([]secretRow, 0, len(apiRows))
 	for _, r := range apiRows {
 		rows = append(rows, secretRow{
-			envVar:   r.EnvVar,
-			value:    r.Value,
-			item:     itemByVar[r.EnvVar],
-			provider: r.Provider,
-			project:  r.Project,
-			refKind:  r.RefKind,
-			ref:      r.Ref,
+			envVar:      r.EnvVar,
+			value:       r.Value,
+			item:        itemByVar[r.EnvVar],
+			provider:    r.Provider,
+			project:     r.Project,
+			refKind:     r.RefKind,
+			ref:         r.Ref,
+			paths:       append([]string(nil), r.Paths...),
+			providerKey: r.ProviderKey,
+			isMapping:   r.IsMapping,
 		})
 	}
 
@@ -430,14 +437,23 @@ func (m *Model) updateSecrets(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !ok {
 				return m, nil
 			}
-			if r.refKind != "secret-key" {
-				m.errMsg = "edit is only supported for secret-key mappings"
+			if !canMutateRow(r) {
+				m.errMsg = "edit is only supported for secret and path mappings"
 				return m, nil
 			}
 			m.editTarget = &r
-			m.editValue = r.value
 			m.editSave = false
-			m.editForm = m.newEditForm()
+			if isPathKind(r.refKind) && r.isMapping {
+				m.editIsPath = true
+				m.editPaths = strings.Join(r.paths, "\n")
+				m.editValue = ""
+				m.editForm = m.newPathEditForm()
+			} else {
+				m.editIsPath = false
+				m.editValue = r.value
+				m.editPaths = ""
+				m.editForm = m.newEditForm()
+			}
 			m.editForm = m.sizeFormToModalBody(m.editForm)
 			m.screen = screenEdit
 			return m, m.editForm.Init()
@@ -446,20 +462,32 @@ func (m *Model) updateSecrets(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !ok {
 				return m, nil
 			}
-			if r.refKind != "secret-key" {
-				m.errMsg = "delete is only supported for secret-key mappings"
+			if !canMutateRow(r) {
+				m.errMsg = "delete is only supported for secret and path mappings"
 				return m, nil
 			}
 			m.editTarget = &r
-			m.confirmText = fmt.Sprintf("Delete provider secret '%s'?\n\nEnv var: %s\nProvider: %s", r.ref, r.envVar, r.provider)
+			if isPathKind(r.refKind) && r.isMapping {
+				m.confirmText = fmt.Sprintf("Remove %s mapping for '%s' from ws.yaml?\n\nProvider secrets will not be deleted.", r.refKind, r.envVar)
+			} else if isPathKind(r.refKind) {
+				key := r.providerKey
+				if key == "" {
+					key = r.ref
+				}
+				m.confirmText = fmt.Sprintf("Delete provider %s '%s'?\n\nEnv var: %s\nThe path mapping in ws.yaml will be kept.", r.refKind, key, r.envVar)
+			} else {
+				m.confirmText = fmt.Sprintf("Delete provider secret '%s'?\n\nEnv var: %s\nProvider: %s", r.ref, r.envVar, r.provider)
+			}
 			m.deleteYes = false
 			m.deleteForm = m.newDeleteForm()
 			m.deleteForm = m.sizeFormToModalBody(m.deleteForm)
 			m.screen = screenConfirmDelete
 			return m, m.deleteForm.Init()
 		case "n":
+			m.createKind = "secret-key"
 			m.createEnvVar = ""
 			m.createSecretKey = ""
+			m.createPaths = ""
 			m.createValue = ""
 			m.createDesc = ""
 			m.createReplication = "global"
@@ -534,7 +562,11 @@ func (m *Model) updateEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.editForm == nil {
-		m.editForm = m.newEditForm()
+		if m.editIsPath {
+			m.editForm = m.newPathEditForm()
+		} else {
+			m.editForm = m.newEditForm()
+		}
 		m.editForm = m.sizeFormToModalBody(m.editForm)
 		return m, m.editForm.Init()
 	}
@@ -550,14 +582,15 @@ func (m *Model) updateEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.editTarget != nil && m.editSave {
 			row := *m.editTarget
 			val := m.editValue
-			m.busyText = "Saving secret…"
+			paths := m.editPaths
+			m.busyText = "Saving…"
 			m.screen = screenBusy
 			m.editForm = nil
 			m.editTarget = nil
 			return m, tea.Batch(
 				m.spinner.Tick,
 				func() tea.Msg {
-					return editDoneMsg{err: m.saveEdit(row, val)}
+					return editDoneMsg{err: m.saveEdit(row, val, paths)}
 				},
 			)
 		}
@@ -569,7 +602,10 @@ func (m *Model) updateEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *Model) saveEdit(row secretRow, newValue string) error {
+func (m *Model) saveEdit(row secretRow, newValue, pathsText string) error {
+	if isPathKind(row.refKind) && row.isMapping {
+		return guiapi.UpdatePathMapping(m.ctx, m.configPath, m.selectedEnvName, row.envVar, config.ParsePathLines(pathsText))
+	}
 	return guiapi.UpdateSecret(m.ctx, m.configPath, m.selectedEnvName, row.envVar, newValue)
 }
 
@@ -627,7 +663,7 @@ func (m *Model) updateCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	{
 		locs := append([]string(nil), m.createLocations...)
 		sort.Strings(locs)
-		key := m.createReplication + "|" + strings.Join(locs, ",")
+		key := m.createKind + "|" + m.createEnvVar + "|" + m.createPaths + "|" + m.createReplication + "|" + strings.Join(locs, ",")
 		if key != m.createSummaryKey {
 			m.createSummaryKey = key
 			m.createSummaryTick++
@@ -638,7 +674,7 @@ func (m *Model) updateCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.createAction {
 		case "create":
 			in := m.snapshotCreateInput()
-			m.busyText = "Creating secret…"
+			m.busyText = "Creating…"
 			m.screen = screenBusy
 			m.createForm = nil
 			return m, tea.Batch(

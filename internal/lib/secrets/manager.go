@@ -26,6 +26,8 @@ type ParameterStore interface {
 	GetParameter(projectID, paramName string) (string, error)
 	GetParameters(projectID string, paramNames []string) (map[string]string, error)
 	GetParametersByPath(projectID, paramPath string) (map[string]string, error)
+	PutParameter(projectID, paramName, paramValue string) error
+	DeleteParameter(projectID, paramName string) error
 }
 
 // SecretMutator is an optional interface implemented by providers that support
@@ -101,11 +103,13 @@ func (f *SecretManagerFactory) CreateSecretManager(ctx context.Context, provider
 
 // GetSecretsForEnvironment retrieves all secrets and values for a given environment configuration
 func (f *SecretManagerFactory) GetSecretsForEnvironment(ctx context.Context, env *config.Environment) (map[string]string, error) {
-	return f.GetSecretsForEnvironmentWithCache(ctx, env, "", "")
+	values, _, err := f.GetSecretsForEnvironmentWithCache(ctx, env, "", "")
+	return values, err
 }
 
-// GetSecretsForEnvironmentWithCache retrieves all secrets and values for a given environment configuration with caching
-func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Context, env *config.Environment, configPath, envName string) (map[string]string, error) {
+// GetSecretsForEnvironmentWithCache retrieves all secrets and values for a given environment configuration with caching.
+// The second return value maps env var names to original provider keys for path-expanded entries.
+func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Context, env *config.Environment, configPath, envName string) (map[string]string, map[string]string, error) {
 	logger := log.NewLogger()
 
 	// Initialize cache manager if config path is provided
@@ -218,7 +222,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 			// Clean up cache manager
 			cacheManager.Close()
 
-			return allSecrets, nil
+			return allSecrets, nil, nil
 		}
 
 		logger.Debug("Not all secrets found in cache, fetching from providers", "cached_count", len(cachedSecrets))
@@ -228,13 +232,13 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 	providerGroups := make(map[fetchKey][]string)
 
 	// Group mappings by provider/project/region for path-based mappings
-	pathGroups := make(map[fetchKey]map[string]string)
+	pathGroups := make(map[fetchKey]map[string][]string)
 
 	// Group mappings by provider/project/region for parameter-based mappings
 	paramGroups := make(map[fetchKey][]string)
 
 	// Group mappings by provider/project/region for parameter path-based mappings
-	paramPathGroups := make(map[fetchKey]map[string]string)
+	paramPathGroups := make(map[fetchKey]map[string][]string)
 
 	// Get all env items (from map)
 	envItems := env.GetEnvItems()
@@ -242,7 +246,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 
 	// Process all env items to separate secret-based and value-based ones
 	for i, envItem := range envItems {
-		logger.Debug("Processing mapping", "index", i, "env_var", envItem.EnvironmentVariable, "has_secret_key", envItem.SecretKey != "", "has_secret_path", envItem.SecretPath != "", "has_param_key", envItem.ParamKey != "", "has_param_path", envItem.ParamPath != "", "has_value", envItem.Value != nil)
+		logger.Debug("Processing mapping", "index", i, "env_var", envItem.EnvironmentVariable, "has_secret_key", envItem.SecretKey != "", "has_secret_path", len(envItem.SecretPath) > 0, "has_param_key", envItem.ParamKey != "", "has_param_path", len(envItem.ParamPath) > 0, "has_value", envItem.Value != nil)
 
 		// Handle direct values first
 		if envItem.Value != nil {
@@ -259,10 +263,10 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		}
 
 		// Process path-based mappings
-		if envItem.SecretPath != "" {
+		if len(envItem.SecretPath) > 0 {
 			logger.Debug("Adding path-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "secret_path", envItem.SecretPath)
 			if pathGroups[key] == nil {
-				pathGroups[key] = make(map[string]string)
+				pathGroups[key] = make(map[string][]string)
 			}
 			pathGroups[key][envItem.EnvironmentVariable] = envItem.SecretPath
 		}
@@ -274,10 +278,10 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		}
 
 		// Process parameter path-based mappings
-		if envItem.ParamPath != "" {
+		if len(envItem.ParamPath) > 0 {
 			logger.Debug("Adding param path-based mapping to provider group", "provider", key.provider, "project", key.project, "region", key.region, "param_path", envItem.ParamPath)
 			if paramPathGroups[key] == nil {
-				paramPathGroups[key] = make(map[string]string)
+				paramPathGroups[key] = make(map[string][]string)
 			}
 			paramPathGroups[key][envItem.EnvironmentVariable] = envItem.ParamPath
 		}
@@ -287,6 +291,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 
 	// Fetch secrets from each provider
 	allSecrets := make(map[string]string)
+	sourceRefs := make(map[string]string)
 
 	for key, secretIDs := range providerGroups {
 		logger.Debug("Creating secret manager", "provider", key.provider, "project", key.project, "region", key.region, "secret_count", len(secretIDs))
@@ -315,6 +320,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 				if itemKey == key {
 					if secretValue, exists := secrets[envItem.SecretKey]; exists {
 						allSecrets[envItem.EnvironmentVariable] = secretValue
+						sourceRefs[envItem.EnvironmentVariable] = envItem.SecretKey
 						logger.Debug("Mapped secret to environment variable", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", key.provider, "project", key.project, "region", key.region)
 					} else {
 						logger.Debug("Secret key not found in provider response", "env_var", envItem.EnvironmentVariable, "secret_key", envItem.SecretKey, "provider", key.provider, "project", key.project, "region", key.region)
@@ -333,14 +339,16 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		}
 		defer secretManager.Close()
 
-		for envVar, secretPath := range pathMappings {
-			secrets, err := secretManager.GetSecretsByPath(key.project, secretPath)
-			if err != nil {
-				fmt.Printf("Warning: failed to get secrets from path '%s': %v\n", secretPath, err)
-				continue
-			}
+		for envVar, secretPaths := range pathMappings {
+			for _, secretPath := range secretPaths {
+				secrets, err := secretManager.GetSecretsByPath(key.project, secretPath)
+				if err != nil {
+					fmt.Printf("Warning: failed to get secrets from path '%s': %v\n", secretPath, err)
+					continue
+				}
 
-			injectPathSecrets(allSecrets, envVar, secrets)
+				injectPathSecrets(allSecrets, sourceRefs, envVar, secretPath, secrets)
+			}
 		}
 	}
 
@@ -371,6 +379,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 				if itemKey == key {
 					if paramValue, exists := params[envItem.ParamKey]; exists {
 						allSecrets[envItem.EnvironmentVariable] = paramValue
+						sourceRefs[envItem.EnvironmentVariable] = envItem.ParamKey
 						logger.Debug("Mapped parameter to environment variable", "env_var", envItem.EnvironmentVariable, "param_key", envItem.ParamKey, "provider", key.provider, "project", key.project, "region", key.region)
 					}
 				}
@@ -393,14 +402,16 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 			continue
 		}
 
-		for envVar, paramPath := range pathMappings {
-			params, err := paramStore.GetParametersByPath(key.project, paramPath)
-			if err != nil {
-				fmt.Printf("Warning: failed to get parameters from path '%s': %v\n", paramPath, err)
-				continue
-			}
+		for envVar, paramPaths := range pathMappings {
+			for _, paramPath := range paramPaths {
+				params, err := paramStore.GetParametersByPath(key.project, paramPath)
+				if err != nil {
+					fmt.Printf("Warning: failed to get parameters from path '%s': %v\n", paramPath, err)
+					continue
+				}
 
-			injectPathSecrets(allSecrets, envVar, params)
+				injectPathSecrets(allSecrets, sourceRefs, envVar, paramPath, params)
+			}
 		}
 	}
 
@@ -437,7 +448,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		cachedCount := 0
 		for _, envItem := range envItems {
 			// Only cache secrets (not static values)
-			if envItem.Value == nil && (envItem.SecretKey != "" || envItem.SecretPath != "" || envItem.ParamKey != "" || envItem.ParamPath != "") {
+			if envItem.Value == nil && (envItem.SecretKey != "" || len(envItem.SecretPath) > 0 || envItem.ParamKey != "" || len(envItem.ParamPath) > 0) {
 				envVar := envItem.EnvironmentVariable
 				if value, exists := allSecrets[envVar]; exists {
 					if err := cacheManager.Set(configPath, envName, envVar, value, cacheTTL); err != nil {
@@ -456,7 +467,7 @@ func (f *SecretManagerFactory) GetSecretsForEnvironmentWithCache(ctx context.Con
 		cacheManager.Close()
 	}
 
-	return allSecrets, nil
+	return allSecrets, sourceRefs, nil
 }
 
 // fetchKey identifies a provider client instance (provider + project + region).
@@ -492,14 +503,19 @@ func resolveFetchKey(env *config.Environment, envItem config.EnvItem) fetchKey {
 }
 
 // injectPathSecrets merges path-fetched secrets into allSecrets.
-// When envVar is "*", each secret name is used as the env var directly;
-// otherwise names are prefixed with envVar + "_".
-func injectPathSecrets(allSecrets map[string]string, envVar string, secrets map[string]string) {
-	for secretName, secretValue := range secrets {
-		if envVar == "*" {
-			allSecrets[secretName] = secretValue
-		} else {
-			allSecrets[envVar+"_"+secretName] = secretValue
+// secrets is keyed by original provider name; relative env var names are derived from basePath.
+// When mappingKey is "*", each relative name is used as the env var directly;
+// otherwise names are prefixed with mappingKey + "_". Later calls overlay earlier ones.
+func injectPathSecrets(allSecrets, sourceRefs map[string]string, mappingKey, basePath string, secrets map[string]string) {
+	for originalName, secretValue := range secrets {
+		rel := relativeEnvVarName(basePath, originalName)
+		envName := rel
+		if mappingKey != "*" {
+			envName = mappingKey + "_" + rel
+		}
+		allSecrets[envName] = secretValue
+		if sourceRefs != nil {
+			sourceRefs[envName] = originalName
 		}
 	}
 }

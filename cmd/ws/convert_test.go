@@ -77,7 +77,7 @@ spec:
 		if got := item.Value.(string); got != expected {
 			t.Fatalf("env item %q: expected value %q, got %q", key, expected, got)
 		}
-		if item.SecretKey != "" || item.SecretPath != "" {
+		if item.SecretKey != "" || len(item.SecretPath) > 0 {
 			t.Fatalf("env item %q: expected no secret fields, got secret-key=%q secret-path=%q", key, item.SecretKey, item.SecretPath)
 		}
 	}

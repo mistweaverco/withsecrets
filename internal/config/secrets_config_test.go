@@ -312,7 +312,7 @@ func TestValidateConfig(t *testing.T) {
 						Provider: "local",
 						Project:  "",
 						Env: map[string]EnvItem{
-							"BAR": {SecretPath: "path/to/secrets"},
+							"BAR": {SecretPath: []string{"path/to/secrets"}},
 						},
 					},
 				},
@@ -340,7 +340,7 @@ func TestValidateConfig(t *testing.T) {
 					"default": {
 						Provider: "aws",
 						Env: map[string]EnvItem{
-							"*": {ParamPath: "/local/withsecrets/config"},
+							"*": {ParamPath: []string{"/local/withsecrets/config"}},
 						},
 					},
 				},
@@ -354,7 +354,7 @@ func TestValidateConfig(t *testing.T) {
 					"default": {
 						Provider: "aws",
 						Env: map[string]EnvItem{
-							"*": {SecretPath: "/local/withsecrets/config"},
+							"*": {SecretPath: []string{"/local/withsecrets/config"}},
 						},
 					},
 				},
@@ -397,7 +397,7 @@ func TestValidateConfig(t *testing.T) {
 					"default": {
 						Provider: "azure",
 						Env: map[string]EnvItem{
-							"FOO": {ParamPath: "/path/to/params"},
+							"FOO": {ParamPath: []string{"/path/to/params"}},
 						},
 					},
 				},
@@ -708,7 +708,7 @@ func TestSecretFieldsInterpolation(t *testing.T) {
 						"GCP_PROJECT": {Value: "my-proj"},
 						"NAME":        {Value: "db-password"},
 						"KEYNAME":     {Value: "api-key"},
-						"DB_PASSWORD": {SecretPath: "projects/${GCP_PROJECT}/secrets/${NAME}"},
+						"DB_PASSWORD": {SecretPath: []string{"projects/${GCP_PROJECT}/secrets/${NAME}"}},
 						"API_KEY":     {SecretKey: "${KEYNAME}"},
 					},
 				},
@@ -723,7 +723,7 @@ func TestSecretFieldsInterpolation(t *testing.T) {
 		require.NoError(t, err)
 
 		env := cfg.Environments["default"]
-		require.Equal(t, "projects/my-proj/secrets/db-password", env.Env["DB_PASSWORD"].SecretPath)
+		require.Equal(t, []string{"projects/my-proj/secrets/db-password"}, env.Env["DB_PASSWORD"].SecretPath)
 		require.Equal(t, "api-key", env.Env["API_KEY"].SecretKey)
 	})
 
@@ -739,7 +739,7 @@ func TestSecretFieldsInterpolation(t *testing.T) {
 					Project:  "test-project",
 					Env: map[string]EnvItem{
 						"SERVICE":     {Value: "billing"},
-						"SECRET_PATH": {SecretPath: "orgs/${ORG}/svcs/${SERVICE}/secrets/${MISSING:-fallback}"},
+						"SECRET_PATH": {SecretPath: []string{"orgs/${ORG}/svcs/${SERVICE}/secrets/${MISSING:-fallback}"}},
 						"SECRET_KEY":  {SecretKey: "${KEY_MISSING:-default-key}"},
 					},
 				},
@@ -754,8 +754,31 @@ func TestSecretFieldsInterpolation(t *testing.T) {
 		require.NoError(t, err)
 
 		env := cfg.Environments["default"]
-		require.Equal(t, "orgs/acme/svcs/billing/secrets/fallback", env.Env["SECRET_PATH"].SecretPath)
+		require.Equal(t, []string{"orgs/acme/svcs/billing/secrets/fallback"}, env.Env["SECRET_PATH"].SecretPath)
 		require.Equal(t, "default-key", env.Env["SECRET_KEY"].SecretKey)
+	})
+
+	t.Run("interpolate each path in a list", func(t *testing.T) {
+		cfg := &SecretsConfig{
+			Environments: map[string]Environment{
+				"default": {
+					Provider: "aws",
+					Env: map[string]EnvItem{
+						"PREFIX": {Value: "app"},
+						"*":      {SecretPath: []string{"${PREFIX}/shared", "${PREFIX}/overrides"}},
+					},
+				},
+			},
+		}
+
+		err := resolveInheritance(cfg)
+		require.NoError(t, err)
+		err = processValueInterpolations(cfg)
+		require.NoError(t, err)
+		err = validateConfig(cfg)
+		require.NoError(t, err)
+
+		require.Equal(t, []string{"app/shared", "app/overrides"}, cfg.Environments["default"].Env["*"].SecretPath)
 	})
 }
 
@@ -1173,5 +1196,57 @@ func TestMultipleVariableInterpolation(t *testing.T) {
 		env2 := config.Environments["env2"]
 		require.Equal(t, "env1: env1_value", env1.Env["RESULT1"].Value)
 		require.Equal(t, "env2: env2_value", env2.Env["RESULT2"].Value)
+	})
+}
+
+func TestEnvItemPathStringOrList(t *testing.T) {
+	t.Run("secret-path string", func(t *testing.T) {
+		var item EnvItem
+		err := yaml.Unmarshal([]byte("secret-path: /a/b\n"), &item)
+		require.NoError(t, err)
+		require.Equal(t, []string{"/a/b"}, item.SecretPath)
+	})
+
+	t.Run("secret-path list", func(t *testing.T) {
+		var item EnvItem
+		err := yaml.Unmarshal([]byte("secret-path:\n  - /a\n  - /b\n"), &item)
+		require.NoError(t, err)
+		require.Equal(t, []string{"/a", "/b"}, item.SecretPath)
+	})
+
+	t.Run("param-path string", func(t *testing.T) {
+		var item EnvItem
+		err := yaml.Unmarshal([]byte("param-path: /params\n"), &item)
+		require.NoError(t, err)
+		require.Equal(t, []string{"/params"}, item.ParamPath)
+	})
+
+	t.Run("param-path list skips empty", func(t *testing.T) {
+		var item EnvItem
+		err := yaml.Unmarshal([]byte("param-path:\n  - /a\n  - \"\"\n  - /b\n"), &item)
+		require.NoError(t, err)
+		require.Equal(t, []string{"/a", "/b"}, item.ParamPath)
+	})
+
+	t.Run("load config with path lists", func(t *testing.T) {
+		content := `
+default:
+  provider: aws
+  env:
+    "*":
+      secret-path:
+        - /shared
+        - /overrides
+    DB:
+      param-path: /db
+`
+		dir := t.TempDir()
+		path := dir + "/ws.yaml"
+		require.NoError(t, os.WriteFile(path, []byte(content), 0644))
+		cfg, err := LoadSecretsConfig(path)
+		require.NoError(t, err)
+		env := cfg.Environments["default"]
+		require.Equal(t, []string{"/shared", "/overrides"}, env.Env["*"].SecretPath)
+		require.Equal(t, []string{"/db"}, env.Env["DB"].ParamPath)
 	})
 }

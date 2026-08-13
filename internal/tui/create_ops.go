@@ -3,12 +3,15 @@ package tui
 import (
 	"strings"
 
+	"github.com/mistweaverco/withsecrets/internal/config"
 	"github.com/mistweaverco/withsecrets/internal/guiapi"
 )
 
 type createInput struct {
+	kind        string
 	envVar      string
 	secretKey   string
+	paths       string
 	value       string
 	desc        string
 	replication string
@@ -21,8 +24,10 @@ type createInput struct {
 
 func (m *Model) snapshotCreateInput() createInput {
 	return createInput{
+		kind:        m.createKind,
 		envVar:      strings.TrimSpace(m.createEnvVar),
 		secretKey:   strings.TrimSpace(m.createSecretKey),
+		paths:       m.createPaths,
 		value:       m.createValue,
 		desc:        strings.TrimSpace(m.createDesc),
 		replication: m.createReplication,
@@ -52,11 +57,17 @@ func (m *Model) ensureGCPLocationsLoaded() error {
 }
 
 func (m *Model) doCreateFromForm(in createInput) error {
+	kind := strings.TrimSpace(in.kind)
+	if kind == "" {
+		kind = "secret-key"
+	}
 	return guiapi.CreateSecret(m.ctx, guiapi.CreateInput{
 		ConfigPath:  in.configPath,
 		EnvName:     in.envName,
 		EnvVar:      in.envVar,
+		Kind:        kind,
 		SecretKey:   in.secretKey,
+		Paths:       config.ParsePathLines(in.paths),
 		Value:       in.value,
 		Description: in.desc,
 		Replication: in.replication,

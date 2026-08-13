@@ -266,7 +266,11 @@ production:
 					<div class="card bg-base-200">
 						<div class="card-body">
 							<ClickableHeadline level={3} id="withsecrets-yaml-env-secret-paths" className="card-title" >Secret Paths (secret-path)</ClickableHeadline>
-							<p class="mb-4">Fetch all secrets under a specific path prefix:</p>
+							<p class="mb-4">
+								Fetch all secrets under a path prefix. <code>secret-path</code> (and
+								<code>param-path</code>) can be a string or an ordered list of strings; later paths
+								overlay earlier ones when names collide:
+							</p>
 							<CodeBlock
 								lang="yaml"
 								meta="path=ws.yaml"
@@ -274,7 +278,9 @@ production:
   DB:
     secret-path: "database"
   API:
-    secret-path: "external-apis"`}
+    secret-path:
+      - "external-apis"
+      - "external-apis-overrides"`}
 							/>
 							<p class="mt-4 text-sm">
 								This will create environment variables like <code>DB_CONNECTION_STRING</code>,
@@ -296,12 +302,13 @@ production:
 								meta="path=ws.yaml"
 								code={`env:
   "*":
-    secret-path: /local/withsecrets/config`}
+    secret-path:
+      - /shared/config
+      - /overrides/config`}
 							/>
 							<p class="mt-4 text-sm">
-								Secrets named <code>/local/withsecrets/config/USERNAME</code> and
-								<code>/local/withsecrets/config/PASSWORD</code> become <code>USERNAME</code> and
-								<code>PASSWORD</code>.
+								Secrets named <code>/shared/config/USERNAME</code> become <code>USERNAME</code>. A
+								later path that also defines <code>USERNAME</code> wins.
 							</p>
 						</div>
 					</div>
@@ -320,7 +327,9 @@ production:
   API_TOKEN:
     param-key: /apps/myapp/API_TOKEN
   "*":
-    param-path: /local/withsecrets/config`}
+    param-path:
+      - /local/withsecrets/config
+      - /local/withsecrets/overrides`}
 							/>
 							<p class="mt-4 text-sm">
 								Exactly one of <code>secret-key</code>, <code>secret-path</code>,

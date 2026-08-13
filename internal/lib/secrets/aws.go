@@ -119,8 +119,7 @@ func (a *AWSSecretsManager) GetSecretsByPath(projectID, secretPath string) (map[
 				continue
 			}
 
-			envVarName := relativeEnvVarName(secretPath, secretName)
-			secrets[envVarName] = secretValue
+			secrets[secretName] = secretValue
 		}
 	}
 
@@ -182,8 +181,7 @@ func (a *AWSSecretsManager) GetParametersByPath(projectID, paramPath string) (ma
 			if parameter.Name == nil || parameter.Value == nil {
 				continue
 			}
-			envVarName := relativeEnvVarName(paramPath, *parameter.Name)
-			params[envVarName] = *parameter.Value
+			params[*parameter.Name] = *parameter.Value
 		}
 	}
 
@@ -283,5 +281,30 @@ func (a *AWSSecretsManager) DeleteSecret(secretName string, forceDelete bool) er
 		return fmt.Errorf("failed to delete secret '%s': %w", secretName, err)
 	}
 
+	return nil
+}
+
+// PutParameter creates or overwrites an SSM parameter.
+func (a *AWSSecretsManager) PutParameter(projectID, paramName, paramValue string) error {
+	input := &ssm.PutParameterInput{
+		Name:      aws.String(paramName),
+		Value:     aws.String(paramValue),
+		Overwrite: aws.Bool(true),
+	}
+	_, err := a.ssmClient.PutParameter(a.ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to put parameter '%s': %w", paramName, err)
+	}
+	return nil
+}
+
+// DeleteParameter deletes an SSM parameter.
+func (a *AWSSecretsManager) DeleteParameter(projectID, paramName string) error {
+	_, err := a.ssmClient.DeleteParameter(a.ctx, &ssm.DeleteParameterInput{
+		Name: aws.String(paramName),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete parameter '%s': %w", paramName, err)
+	}
 	return nil
 }

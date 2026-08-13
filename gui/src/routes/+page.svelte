@@ -36,9 +36,14 @@
 
 	let editValue = $state("");
 	let editEnvVar = $state("");
+	let editKind = $state("secret-key");
+	let editPaths = $state("");
+	let editIsMapping = $state(false);
 
+	let createKind = $state("secret-key");
 	let createEnvVar = $state("");
 	let createSecretKey = $state("");
+	let createPaths = $state("");
 	let createValue = $state("");
 	let createDesc = $state("");
 	let createReplication = $state("global");
@@ -47,6 +52,31 @@
 
 	let deleteEnvVar = $state("");
 	let deleteRef = $state("");
+	let deleteKind = $state("secret-key");
+	let deleteIsMapping = $state(true);
+
+	const selectedEnvMeta = $derived(environments.find((e) => e.name === selectedEnv) ?? null);
+
+	function isPathKind(kind: string): boolean {
+		return kind === "secret-path" || kind === "param-path";
+	}
+
+	function canMutate(row: SecretRow): boolean {
+		if (row.refKind === "value") {
+			return false;
+		}
+		if (row.refKind === "secret-key" || row.refKind === "param-key") {
+			return Boolean(row.isMapping);
+		}
+		return isPathKind(row.refKind);
+	}
+
+	function parsePathLines(text: string): string[] {
+		return text
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter((line) => line.length > 0);
+	}
 
 	const viewDialog = createDialog();
 	const editDialog = createDialog();
@@ -149,21 +179,33 @@
 
 	async function openEdit(row: SecretRow) {
 		if (!selectedEnv) return;
-		if (row.refKind !== "secret-key") {
-			showError("Edit is only supported for secret-key mappings");
+		if (!canMutate(row)) {
+			showError("Edit is only supported for secrets and path mappings");
 			return;
 		}
 		editEnvVar = row.envVar;
-		editValue = peekSecretValue(selectedEnv, row.envVar) ?? row.value;
+		editKind = row.refKind;
+		editIsMapping = Boolean(row.isMapping);
+		if (isPathKind(row.refKind) && row.isMapping) {
+			editPaths = (row.paths ?? []).join("\n");
+			editValue = "";
+		} else {
+			editValue = peekSecretValue(selectedEnv, row.envVar) ?? row.value;
+			editPaths = "";
+		}
 		editOpen.set(true);
 	}
 
 	async function submitEdit() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Saving secret…", async () => {
-				await updateSecret(selectedEnv, editEnvVar, editValue);
-				setSecretValue(selectedEnv, editEnvVar, editValue);
+			await withBusy("Saving…", async () => {
+				if (isPathKind(editKind) && editIsMapping) {
+					await updateSecret(selectedEnv, editEnvVar, { paths: parsePathLines(editPaths) });
+				} else {
+					await updateSecret(selectedEnv, editEnvVar, { value: editValue });
+					setSecretValue(selectedEnv, editEnvVar, editValue);
+				}
 				closeDialog(editOpen);
 				await loadSecrets();
 			});
@@ -177,8 +219,10 @@
 		try {
 			await withBusy("Loading create options…", async () => {
 				createOptions = await getCreateOptions(selectedEnv);
+				createKind = "secret-key";
 				createEnvVar = "";
 				createSecretKey = "";
+				createPaths = "";
 				createValue = "";
 				createDesc = "";
 				createReplication = createOptions.replication;
@@ -193,16 +237,25 @@
 	async function submitCreate() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Creating secret…", async () => {
-				await createSecret(selectedEnv, {
-					envVar: createEnvVar,
-					secretKey: createSecretKey,
-					value: createValue,
-					description: createDesc,
-					replication: createReplication,
-					locations: createReplication === "user-managed" ? createLocations : []
-				});
-				setSecretValue(selectedEnv, createEnvVar, createValue);
+			await withBusy("Creating…", async () => {
+				if (isPathKind(createKind)) {
+					await createSecret(selectedEnv, {
+						envVar: createEnvVar,
+						kind: createKind,
+						paths: parsePathLines(createPaths)
+					});
+				} else {
+					await createSecret(selectedEnv, {
+						envVar: createEnvVar,
+						kind: "secret-key",
+						secretKey: createSecretKey,
+						value: createValue,
+						description: createDesc,
+						replication: createReplication,
+						locations: createReplication === "user-managed" ? createLocations : []
+					});
+					setSecretValue(selectedEnv, createEnvVar, createValue);
+				}
 				closeDialog(createOpen);
 				await loadSecrets();
 			});
@@ -212,12 +265,14 @@
 	}
 
 	function openDelete(row: SecretRow) {
-		if (row.refKind !== "secret-key") {
-			showError("Delete is only supported for secret-key mappings");
+		if (!canMutate(row)) {
+			showError("Delete is only supported for secrets and path mappings");
 			return;
 		}
 		deleteEnvVar = row.envVar;
-		deleteRef = row.ref;
+		deleteRef = row.providerKey || row.ref;
+		deleteKind = row.refKind;
+		deleteIsMapping = Boolean(row.isMapping);
 		deleteOpen.set(true);
 	}
 
@@ -332,14 +387,14 @@
 										<button type="button" class="success" onclick={() => openView(row)}>View</button>
 										<button
 											type="button"
-											class="{row.refKind === "secret-key" ? "warning" : "invisible"}"
-											disabled={row.refKind !== "secret-key"}
+											class="{canMutate(row) ? "warning" : "invisible"}"
+											disabled={!canMutate(row)}
 											onclick={() => openEdit(row)}>Edit</button
 										>
 										<button
 											type="button"
-											class="{row.refKind === "secret-key" ? "danger" : "invisible"}"
-											disabled={row.refKind !== "secret-key"}
+											class="{canMutate(row) ? "danger" : "invisible"}"
+											disabled={!canMutate(row)}
 											onclick={() => openDelete(row)}>Delete</button
 										>
 									</div>
@@ -374,11 +429,19 @@
 	<div class="dialog-layer">
 		<div use:melt={$editOverlay} class="dialog-backdrop"></div>
 		<div use:melt={$editContent} class="dialog" role="dialog" aria-modal="true">
-			<h3 class="text-lg font-semibold">Edit secret</h3>
-			<div class="field">
-				<label for="edit-value">Secret value</label>
-				<textarea id="edit-value" rows="4" bind:value={editValue}></textarea>
-			</div>
+			<h3 class="text-lg font-semibold">{isPathKind(editKind) && editIsMapping ? "Edit path mapping" : "Edit secret"}</h3>
+			{#if isPathKind(editKind) && editIsMapping}
+				<p class="muted text-sm">{editEnvVar} · {editKind}</p>
+				<div class="field">
+					<label for="edit-paths">Paths (one per line)</label>
+					<textarea id="edit-paths" rows="4" bind:value={editPaths}></textarea>
+				</div>
+			{:else}
+				<div class="field">
+					<label for="edit-value">Secret value</label>
+					<textarea id="edit-value" rows="4" bind:value={editValue}></textarea>
+				</div>
+			{/if}
 			<div class="actions">
 				<button type="button" use:melt={$editClose} class="ghost" disabled={$isBusy}>Cancel</button>
 				<button type="button" class="primary" onclick={submitEdit} disabled={$isBusy}>Save</button>
@@ -391,47 +454,68 @@
 	<div class="dialog-layer">
 		<div use:melt={$createOverlay} class="dialog-backdrop"></div>
 		<div use:melt={$createContent} class="dialog" role="dialog" aria-modal="true">
-			<h3 class="text-lg font-semibold">Create secret & mapping</h3>
+			<h3 class="text-lg font-semibold">Create mapping</h3>
+			<div class="field">
+				<label for="create-kind">Kind</label>
+				<select id="create-kind" bind:value={createKind}>
+					<option value="secret-key">secret-key</option>
+					<option value="secret-path">secret-path</option>
+					{#if selectedEnvMeta?.provider === "aws"}
+						<option value="param-path">param-path</option>
+					{/if}
+				</select>
+			</div>
 			<div class="field">
 				<label for="create-env-var">Env var</label>
-				<input id="create-env-var" bind:value={createEnvVar} placeholder="ENV_VAR_NAME" />
+				<input
+					id="create-env-var"
+					bind:value={createEnvVar}
+					placeholder={isPathKind(createKind) ? "ENV_VAR_NAME or *" : "ENV_VAR_NAME"}
+				/>
 			</div>
-			<div class="field">
-				<label for="create-secret-key">Secret key/id</label>
-				<input id="create-secret-key" bind:value={createSecretKey} placeholder="provider secret key" />
-			</div>
-			<div class="field">
-				<label for="create-value">Value</label>
-				<textarea id="create-value" rows="3" bind:value={createValue}></textarea>
-			</div>
-			<div class="field">
-				<label for="create-desc">Description (optional)</label>
-				<input id="create-desc" bind:value={createDesc} />
-			</div>
-			{#if createOptions?.supportsReplication}
+			{#if isPathKind(createKind)}
 				<div class="field">
-					<label for="create-replication">Replication</label>
-					<select id="create-replication" bind:value={createReplication}>
-						<option value="global">Global (automatic replication)</option>
-						<option value="user-managed">User-managed (choose locations)</option>
-					</select>
+					<label for="create-paths">Paths (one per line)</label>
+					<textarea id="create-paths" rows="4" bind:value={createPaths} placeholder="/path/to/secrets"></textarea>
 				</div>
-				{#if createReplication === "user-managed"}
+			{:else}
+				<div class="field">
+					<label for="create-secret-key">Secret key/id</label>
+					<input id="create-secret-key" bind:value={createSecretKey} placeholder="provider secret key" />
+				</div>
+				<div class="field">
+					<label for="create-value">Value</label>
+					<textarea id="create-value" rows="3" bind:value={createValue}></textarea>
+				</div>
+				<div class="field">
+					<label for="create-desc">Description (optional)</label>
+					<input id="create-desc" bind:value={createDesc} />
+				</div>
+				{#if createOptions?.supportsReplication}
 					<div class="field">
-						<span>Locations</span>
-						<div class="max-h-40 overflow-y-auto rounded-md border border-[#2a2f3d] p-2">
-							{#each createOptions?.locations ?? [] as loc}
-								<label class="flex items-center gap-2 py-1 text-sm">
-									<input
-										type="checkbox"
-										checked={createLocations.includes(loc)}
-										onchange={() => toggleLocation(loc)}
-									/>
-									{loc}
-								</label>
-							{/each}
-						</div>
+						<label for="create-replication">Replication</label>
+						<select id="create-replication" bind:value={createReplication}>
+							<option value="global">Global (automatic replication)</option>
+							<option value="user-managed">User-managed (choose locations)</option>
+						</select>
 					</div>
+					{#if createReplication === "user-managed"}
+						<div class="field">
+							<span>Locations</span>
+							<div class="max-h-40 overflow-y-auto rounded-md border border-[#2a2f3d] p-2">
+								{#each createOptions?.locations ?? [] as loc}
+									<label class="flex items-center gap-2 py-1 text-sm">
+										<input
+											type="checkbox"
+											checked={createLocations.includes(loc)}
+											onchange={() => toggleLocation(loc)}
+										/>
+										{loc}
+									</label>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			{/if}
 			<div class="actions">
@@ -446,11 +530,23 @@
 	<div class="dialog-layer">
 		<div use:melt={$deleteOverlay} class="dialog-backdrop"></div>
 		<div use:melt={$deleteContent} class="dialog" role="dialog" aria-modal="true">
-			<h3 class="text-lg font-semibold">Delete secret</h3>
-			<p>
-				Delete provider secret <strong>{deleteRef}</strong> and remove mapping for
-				<strong>{deleteEnvVar}</strong>?
-			</p>
+			<h3 class="text-lg font-semibold">{isPathKind(deleteKind) && deleteIsMapping ? "Delete mapping" : "Delete secret"}</h3>
+			{#if isPathKind(deleteKind) && deleteIsMapping}
+				<p>
+					Remove <strong>{deleteKind}</strong> mapping for <strong>{deleteEnvVar}</strong> from ws.yaml?
+					Provider secrets will not be deleted.
+				</p>
+			{:else if isPathKind(deleteKind)}
+				<p>
+					Delete provider {deleteKind === "param-path" ? "parameter" : "secret"}
+					<strong>{deleteRef}</strong> ({deleteEnvVar})? The path mapping in ws.yaml will be kept.
+				</p>
+			{:else}
+				<p>
+					Delete provider secret <strong>{deleteRef}</strong> and remove mapping for
+					<strong>{deleteEnvVar}</strong>?
+				</p>
+			{/if}
 			<div class="actions">
 				<button type="button" use:melt={$deleteClose} class="ghost" disabled={$isBusy}>Cancel</button>
 				<button type="button" class="danger" onclick={submitDelete} disabled={$isBusy}>Delete</button>

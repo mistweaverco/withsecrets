@@ -145,7 +145,7 @@ func runTest() error {
 	// Step 2: Attempt to retrieve secrets
 	fmt.Printf("=== Testing Secret Retrieval ===\n\n")
 	logger.Debug("Fetching secrets and values for environment")
-	values, err := factory.GetSecretsForEnvironmentWithCache(ctx, env, cfgPath, testEnvironment)
+	values, _, err := factory.GetSecretsForEnvironmentWithCache(ctx, env, cfgPath, testEnvironment)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve values: %w", err)
 	}

@@ -9,7 +9,7 @@ import (
 func TestInjectPathSecrets(t *testing.T) {
 	t.Run("star injects without prefix", func(t *testing.T) {
 		all := make(map[string]string)
-		injectPathSecrets(all, "*", map[string]string{
+		injectPathSecrets(all, nil, "*", "", map[string]string{
 			"USERNAME": "alice",
 			"PASSWORD": "s3cret",
 		})
@@ -20,11 +20,44 @@ func TestInjectPathSecrets(t *testing.T) {
 
 	t.Run("named key prefixes", func(t *testing.T) {
 		all := make(map[string]string)
-		injectPathSecrets(all, "DB", map[string]string{
+		injectPathSecrets(all, nil, "DB", "", map[string]string{
 			"USERNAME": "alice",
 			"PASSWORD": "s3cret",
 		})
 		if all["DB_USERNAME"] != "alice" || all["DB_PASSWORD"] != "s3cret" {
+			t.Fatalf("unexpected map: %#v", all)
+		}
+	})
+
+	t.Run("later path overlays earlier for star", func(t *testing.T) {
+		all := make(map[string]string)
+		refs := make(map[string]string)
+		injectPathSecrets(all, refs, "*", "/a", map[string]string{
+			"/a/USERNAME": "alice",
+			"/a/PASSWORD": "first",
+		})
+		injectPathSecrets(all, refs, "*", "/b", map[string]string{
+			"/b/PASSWORD": "second",
+			"/b/TOKEN":    "t",
+		})
+		if all["USERNAME"] != "alice" || all["PASSWORD"] != "second" || all["TOKEN"] != "t" {
+			t.Fatalf("unexpected map: %#v", all)
+		}
+		if refs["PASSWORD"] != "/b/PASSWORD" || refs["USERNAME"] != "/a/USERNAME" {
+			t.Fatalf("unexpected refs: %#v", refs)
+		}
+	})
+
+	t.Run("later path overlays earlier for named prefix", func(t *testing.T) {
+		all := make(map[string]string)
+		injectPathSecrets(all, nil, "DB", "/a", map[string]string{
+			"/a/USERNAME": "alice",
+			"/a/PASSWORD": "first",
+		})
+		injectPathSecrets(all, nil, "DB", "/b", map[string]string{
+			"/b/PASSWORD": "second",
+		})
+		if all["DB_USERNAME"] != "alice" || all["DB_PASSWORD"] != "second" {
 			t.Fatalf("unexpected map: %#v", all)
 		}
 	})
