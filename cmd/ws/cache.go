@@ -209,19 +209,22 @@ func runCacheList() error {
 		filteredEntries = filtered
 	}
 
-	// Display entries
-	fmt.Printf("Found %d cached secret(s):\n\n", len(filteredEntries))
+	listed := cache.ExpandListEntries(filteredEntries)
+	if len(listed) == 0 {
+		fmt.Println("No cached secrets found.")
+		return nil
+	}
 
-	for _, entry := range filteredEntries {
+	fmt.Printf("Found %d cached secret(s):\n\n", len(listed))
+
+	for _, entry := range listed {
 		fmt.Printf("Path: %s\n", entry.Path)
 		fmt.Printf("Environment: %s\n", entry.ConfigEnv)
 		fmt.Printf("Variable: %s\n", entry.Env)
 		if cacheVerbose {
 			fmt.Printf("Value: %s\n", entry.Value)
 		} else {
-			// Mask the value for security
-			masked := maskSecret(entry.Value)
-			fmt.Printf("Value: %s\n", masked)
+			fmt.Printf("Value: %s\n", maskSecret(entry.Value))
 		}
 		fmt.Printf("Created: %s\n", entry.CreatedAt.Format("2006-01-02 15:04:05"))
 		fmt.Printf("Expires: %s\n", entry.ExpiresAt.Format("2006-01-02 15:04:05"))

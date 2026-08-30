@@ -165,15 +165,17 @@ func (m *Manager) GetStats() (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	expanded := ExpandListEntries(entries)
+
 	// Count entries by environment
 	envCounts := make(map[string]int)
-	for _, entry := range entries {
+	for _, entry := range expanded {
 		envCounts[entry.ConfigEnv]++
 	}
 
 	return map[string]interface{}{
 		"enabled":            true,
-		"total_entries":      len(entries),
+		"total_entries":      len(expanded),
 		"environment_counts": envCounts,
 		"ttl":                m.globalConfig.Cache.TTL.String(),
 	}, nil

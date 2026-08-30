@@ -13,6 +13,8 @@ import (
 	"github.com/mistweaverco/withsecrets/internal/lib/log"
 )
 
+const sqliteDateTime = "2006-01-02 15:04:05"
+
 // Cache represents a SQLite-based cache for secrets
 type Cache struct {
 	db *sql.DB
@@ -160,7 +162,7 @@ func (c *Cache) cleanupExpired() error {
 
 // Set stores a secret in the cache
 func (c *Cache) Set(path, configEnv, env, value string, ttl time.Duration) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	expiresAt := now.Add(ttl)
 
 	query := `
@@ -168,7 +170,7 @@ func (c *Cache) Set(path, configEnv, env, value string, ttl time.Duration) error
 	VALUES (?, ?, ?, ?, ?, ?)
 	`
 
-	_, err := c.db.Exec(query, path, configEnv, env, value, now, expiresAt)
+	_, err := c.db.Exec(query, path, configEnv, env, value, now.Format(sqliteDateTime), expiresAt.Format(sqliteDateTime))
 	return err
 }
 
