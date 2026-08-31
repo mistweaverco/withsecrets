@@ -89,6 +89,121 @@ func (m *Manager) GetPathMapping(configPath, envName, mappingID string) (CachedP
 	return m.cache.GetPathMapping(absPath, envName, mappingID)
 }
 
+// PatchPathMappingEntry updates the value of envVar inside any path-mapping
+// blobs for this environment. Missing or expired blobs are skipped.
+func (m *Manager) PatchPathMappingEntry(configPath, envName, envVar, newValue string) error {
+	if !m.IsEnabled() {
+		return nil
+	}
+
+	absPath, err := filepath.Abs(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	return m.cache.PatchPathMappingEntry(absPath, envName, envVar, newValue)
+}
+
+// RemovePathMappingEntry drops envVar from any path-mapping blobs for this
+// environment. Empty blobs are deleted.
+func (m *Manager) RemovePathMappingEntry(configPath, envName, envVar string) error {
+	if !m.IsEnabled() {
+		return nil
+	}
+
+	absPath, err := filepath.Abs(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	return m.cache.RemovePathMappingEntry(absPath, envName, envVar)
+}
+
+func remainingTTL(expiresAt time.Time) (time.Duration, bool) {
+	ttl := time.Until(expiresAt)
+	if ttl <= 0 {
+		return 0, false
+	}
+	return ttl, true
+}
+
+func pathMappingIDFromEnv(env string) (string, bool) {
+	if !IsPathMappingKey(env) {
+		return "", false
+	}
+	return strings.TrimPrefix(env, pathMappingKeyPrefix), true
+}
+
+func (c *Cache) forEachPathMapping(path, configEnv string, fn func(mapping CachedPathMapping) (CachedPathMapping, bool)) error {
+	entries, err := c.List()
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.Path != path || entry.ConfigEnv != configEnv {
+			continue
+		}
+		mappingID, ok := pathMappingIDFromEnv(entry.Env)
+		if !ok {
+			continue
+		}
+		ttl, ok := remainingTTL(entry.ExpiresAt)
+		if !ok {
+			continue
+		}
+		mapping, ok := unmarshalPathMapping(entry.Value)
+		if !ok {
+			continue
+		}
+		updated, changed := fn(mapping)
+		if !changed {
+			continue
+		}
+		if len(updated.Entries) == 0 {
+			if err := c.Delete(path, configEnv, entry.Env); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := c.SetPathMapping(path, configEnv, mappingID, updated, ttl); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PatchPathMappingEntry updates envVar's value in matching path-mapping blobs.
+func (c *Cache) PatchPathMappingEntry(path, configEnv, envVar, newValue string) error {
+	return c.forEachPathMapping(path, configEnv, func(mapping CachedPathMapping) (CachedPathMapping, bool) {
+		changed := false
+		for i := range mapping.Entries {
+			if mapping.Entries[i].EnvironmentVariable == envVar {
+				mapping.Entries[i].Value = newValue
+				changed = true
+			}
+		}
+		return mapping, changed
+	})
+}
+
+// RemovePathMappingEntry drops envVar from matching path-mapping blobs.
+func (c *Cache) RemovePathMappingEntry(path, configEnv, envVar string) error {
+	return c.forEachPathMapping(path, configEnv, func(mapping CachedPathMapping) (CachedPathMapping, bool) {
+		filtered := make([]CachedPathEntry, 0, len(mapping.Entries))
+		changed := false
+		for _, item := range mapping.Entries {
+			if item.EnvironmentVariable == envVar {
+				changed = true
+				continue
+			}
+			filtered = append(filtered, item)
+		}
+		mapping.Entries = filtered
+		return mapping, changed
+	})
+}
+
 func marshalPathMapping(mapping CachedPathMapping) ([]byte, error) {
 	mapping.Version = PathMappingVersion
 	if mapping.Entries == nil {

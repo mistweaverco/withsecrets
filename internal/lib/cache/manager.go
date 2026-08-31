@@ -108,6 +108,20 @@ func (m *Manager) Set(configPath, envName, secretName, value string, ttl time.Du
 	return m.cache.Set(absPath, envName, secretName, value, ttl)
 }
 
+// Delete removes a single cached secret
+func (m *Manager) Delete(configPath, envName, secretName string) error {
+	if !m.IsEnabled() {
+		return nil
+	}
+
+	absPath, err := filepath.Abs(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	return m.cache.Delete(absPath, envName, secretName)
+}
+
 // Clear clears all cached secrets
 func (m *Manager) Clear() error {
 	if !m.IsEnabled() {

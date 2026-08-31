@@ -124,7 +124,7 @@ func New(ctx context.Context, configPath string) (*Model, error) {
 	l.Styles = vhsListStyles()
 
 	filter := textinput.New()
-	filter.Placeholder = "Filter secrets…"
+	filter.Placeholder = "Filter secrets..."
 	filter.CharLimit = 256
 	filter.Prompt = "/ "
 	filter.SetStyles(vhsSecretsFilterStyles())
@@ -215,7 +215,7 @@ func (m *Model) View() tea.View {
 		return v
 	case screenEdit:
 		if m.editForm == nil {
-			v := tea.NewView(m.viewModal("Edit secret", "Loading…"))
+			v := tea.NewView(m.viewModal("Edit secret", "Loading..."))
 			v.AltScreen = true
 			return v
 		}
@@ -224,7 +224,7 @@ func (m *Model) View() tea.View {
 		return v
 	case screenCreate:
 		if m.createForm == nil {
-			v := tea.NewView(m.viewModal("Create secret & mapping", "Loading…"))
+			v := tea.NewView(m.viewModal("Create secret & mapping", "Loading..."))
 			v.AltScreen = true
 			return v
 		}
@@ -233,7 +233,7 @@ func (m *Model) View() tea.View {
 		return v
 	case screenConfirmDelete:
 		if m.deleteForm == nil {
-			v := tea.NewView(m.viewModal("Confirm delete", "Loading…"))
+			v := tea.NewView(m.viewModal("Confirm delete", "Loading..."))
 			v.AltScreen = true
 			return v
 		}
@@ -242,7 +242,7 @@ func (m *Model) View() tea.View {
 		return v
 	case screenError:
 		if m.errorForm == nil {
-			v := tea.NewView(m.viewModal("Error", "Loading…"))
+			v := tea.NewView(m.viewModal("Error", "Loading..."))
 			v.AltScreen = true
 			return v
 		}
@@ -256,7 +256,7 @@ func (m *Model) View() tea.View {
 	case screenBusy:
 		s := m.spinner.View()
 		body := strings.TrimSpace(s + " " + m.busyText)
-		v := tea.NewView(m.viewModal("Working…", body))
+		v := tea.NewView(m.viewModal("Working...", body))
 		v.AltScreen = true
 		return v
 	default:
@@ -583,7 +583,7 @@ func (m *Model) updateEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 			row := *m.editTarget
 			val := m.editValue
 			paths := m.editPaths
-			m.busyText = "Saving…"
+			m.busyText = "Saving..."
 			m.screen = screenBusy
 			m.editForm = nil
 			m.editTarget = nil
@@ -674,7 +674,7 @@ func (m *Model) updateCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.createAction {
 		case "create":
 			in := m.snapshotCreateInput()
-			m.busyText = "Creating…"
+			m.busyText = "Creating..."
 			m.screen = screenBusy
 			m.createForm = nil
 			return m, tea.Batch(
@@ -732,7 +732,7 @@ func (m *Model) updateConfirmDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.deleteForm.State == huh.StateCompleted {
 		if m.editTarget != nil && m.deleteYes {
 			row := *m.editTarget
-			m.busyText = "Deleting secret…"
+			m.busyText = "Deleting secret..."
 			m.screen = screenBusy
 			m.deleteForm = nil
 			m.editTarget = nil

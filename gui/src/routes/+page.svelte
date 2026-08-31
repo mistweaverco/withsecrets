@@ -130,7 +130,7 @@
 
 	async function loadEnvironments() {
 		try {
-			await withBusy("Loading environments…", async () => {
+			await withBusy("Loading environments...", async () => {
 				environments = await listEnvironments();
 				if (!selectedEnv && environments.length > 0) {
 					selectedEnv = environments[0].name;
@@ -144,7 +144,7 @@
 	async function loadSecrets() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Loading secrets…", async () => {
+			await withBusy("Loading secrets...", async () => {
 				secrets = await listSecrets(selectedEnv);
 				cacheSecretValues(selectedEnv, secrets);
 				secretsLoaded = true;
@@ -199,7 +199,7 @@
 	async function submitEdit() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Saving…", async () => {
+			await withBusy("Saving...", async () => {
 				if (isPathKind(editKind) && editIsMapping) {
 					await updateSecret(selectedEnv, editEnvVar, { paths: parsePathLines(editPaths) });
 				} else {
@@ -217,7 +217,7 @@
 	async function openCreate() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Loading create options…", async () => {
+			await withBusy("Loading create options...", async () => {
 				createOptions = await getCreateOptions(selectedEnv);
 				createKind = "secret-key";
 				createEnvVar = "";
@@ -237,7 +237,7 @@
 	async function submitCreate() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Creating…", async () => {
+			await withBusy("Creating...", async () => {
 				if (isPathKind(createKind)) {
 					await createSecret(selectedEnv, {
 						envVar: createEnvVar,
@@ -279,7 +279,7 @@
 	async function submitDelete() {
 		if (!selectedEnv) return;
 		try {
-			await withBusy("Deleting secret…", async () => {
+			await withBusy("Deleting secret...", async () => {
 				await deleteSecret(selectedEnv, deleteEnvVar);
 				deleteSecretValue(selectedEnv, deleteEnvVar);
 				closeDialog(deleteOpen);
@@ -342,7 +342,7 @@
 			<div class="flex flex-wrap gap-2">
 				<input
 					type="search"
-					placeholder="Filter secrets…"
+					placeholder="Filter secrets..."
 					bind:value={filter}
 					class="min-w-[180px]"
 				/>
@@ -358,7 +358,7 @@
 		{#if !selectedEnv}
 			<p class="muted">No environment selected.</p>
 		{:else if !secretsLoaded}
-			<p class="muted">Loading secrets…</p>
+			<p class="muted">Loading secrets...</p>
 		{:else if filteredSecrets.length === 0}
 			<p class="muted">No secrets found.</p>
 		{:else}

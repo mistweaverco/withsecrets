@@ -77,7 +77,7 @@ func Run(ctx context.Context, opts Options) error {
 	select {
 	case <-ctx.Done():
 	case sig := <-sigCh:
-		fmt.Fprintf(os.Stdout, "\nReceived %s, shutting down GUI server…\n", sig)
+		fmt.Fprintf(os.Stdout, "\nReceived %s, shutting down GUI server...\n", sig)
 	case err := <-errCh:
 		return err
 	}

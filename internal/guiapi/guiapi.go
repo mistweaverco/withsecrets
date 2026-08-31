@@ -219,7 +219,11 @@ func CreateSecret(ctx context.Context, in CreateInput) error {
 		return err
 	}
 
-	return config.AddOrUpdateEnvSecretKeyMapping(in.ConfigPath, in.EnvName, envVar, secretKey)
+	if err := config.AddOrUpdateEnvSecretKeyMapping(in.ConfigPath, in.EnvName, envVar, secretKey); err != nil {
+		return err
+	}
+	cacheSetSecret(in.ConfigPath, in.EnvName, envVar, in.Value)
+	return nil
 }
 
 func createPathMapping(configPath, envName, envVar, kind string, paths []string) error {
@@ -246,7 +250,11 @@ func createPathMapping(configPath, envName, envVar, kind string, paths []string)
 		return fmt.Errorf("provider 'local' does not support path mappings")
 	}
 
-	return config.AddOrUpdateEnvPathMapping(configPath, envName, envVar, kind, cleaned)
+	if err := config.AddOrUpdateEnvPathMapping(configPath, envName, envVar, kind, cleaned); err != nil {
+		return err
+	}
+	cacheClearEnv(configPath, envName)
+	return nil
 }
 
 func isPathKind(kind string) bool {
@@ -315,14 +323,22 @@ func UpdateSecret(ctx context.Context, configPath, envName, envVar, newValue str
 		if !ok {
 			return fmt.Errorf("provider %s does not support Parameter Store updates", row.Provider)
 		}
-		return paramStore.PutParameter(row.Project, key, newValue)
+		if err := paramStore.PutParameter(row.Project, key, newValue); err != nil {
+			return err
+		}
+		cacheSetSecret(configPath, envName, envVar, newValue)
+		return nil
 	}
 
 	mut, err := secrets.AsMutator(sm)
 	if err != nil {
 		return err
 	}
-	return mut.UpdateSecret(key, newValue)
+	if err := mut.UpdateSecret(key, newValue); err != nil {
+		return err
+	}
+	cacheSetSecret(configPath, envName, envVar, newValue)
+	return nil
 }
 
 // UpdatePathMapping replaces secret-path or param-path values in ws.yaml.
@@ -338,13 +354,21 @@ func UpdatePathMapping(_ context.Context, configPath, envName, envVar string, pa
 	if len(cleaned) == 0 {
 		return fmt.Errorf("at least one path is required")
 	}
-	return config.AddOrUpdateEnvPathMapping(configPath, envName, envVar, kind, cleaned)
+	if err := config.AddOrUpdateEnvPathMapping(configPath, envName, envVar, kind, cleaned); err != nil {
+		return err
+	}
+	cacheClearEnv(configPath, envName)
+	return nil
 }
 
 // DeleteSecret deletes a provider secret/parameter and, for mapping rows, the ws.yaml mapping.
 func DeleteSecret(ctx context.Context, configPath, envName, envVar string) error {
 	if kind, err := mappingKind(configPath, envName, envVar); err == nil && isPathKind(kind) {
-		return config.RemoveEnvMapping(configPath, envName, envVar)
+		if err := config.RemoveEnvMapping(configPath, envName, envVar); err != nil {
+			return err
+		}
+		cacheClearEnv(configPath, envName)
+		return nil
 	}
 
 	row, err := findSecretRow(ctx, configPath, envName, envVar)
@@ -389,8 +413,11 @@ func DeleteSecret(ctx context.Context, configPath, envName, envVar string) error
 	}
 
 	if row.IsMapping {
-		return config.RemoveEnvMapping(configPath, envName, envVar)
+		if err := config.RemoveEnvMapping(configPath, envName, envVar); err != nil {
+			return err
+		}
 	}
+	cacheDeleteSecret(configPath, envName, envVar)
 	return nil
 }
 

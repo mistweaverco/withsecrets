@@ -92,7 +92,7 @@ To be clear, there are many other tools that can help you manage secrets:
 - [1Password Secrets Automation](https://developer.1password.com/docs/secrets-automation/)
 - [Infisical](https://infisical.com/)
 
-… and many more.
+... and many more.
 
 > [!CAUTION]
 > Most of them require a whopping subscription fee,

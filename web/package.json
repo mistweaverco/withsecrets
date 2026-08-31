@@ -6,8 +6,9 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check-watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"test": "vitest run",
+		"check": "node ./vite-plugins/generate-search-index.js && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check-watch": "node ./vite-plugins/generate-search-index.js && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

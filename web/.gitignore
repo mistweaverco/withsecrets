@@ -20,5 +20,8 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Generated at dev/build time
+src/lib/searchIndex.generated.ts
+
 # Neovim
 .editor/neovim-session.vim

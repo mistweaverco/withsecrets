@@ -23,9 +23,9 @@
 			? []
 			: SEARCH_INDEX.filter((e) => {
 					const haystack =
-						`${e.title} ${e.href} ${e.excerpt ?? ''} ${e.keywords.join(' ')}`.toLowerCase();
+						`${e.title} ${e.href} ${e.excerpt ?? ''} ${e.keywords.join(' ')} ${e.content ?? ''}`.toLowerCase();
 					return haystack.includes(normalizedQuery);
-				}).slice(0, 8);
+				}).slice(0, 12);
 	$: selectedIndex =
 		searchResults.length === 0
 			? -1
@@ -98,7 +98,7 @@
 			<input
 				class="input input-bordered input-sm max-w-56"
 				type="search"
-				placeholder="Search docs…"
+				placeholder="Search docs..."
 				bind:value={searchQuery}
 				on:focus={() => (searchOpen = true)}
 				on:keydown={(e) => {
